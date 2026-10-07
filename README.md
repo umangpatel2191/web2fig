@@ -51,7 +51,9 @@ top, so those sections can still capture in their starting state. Capture those 
 
 Resize the browser window (or use DevTools device mode) and capture again — each capture is one viewport width.
 
-## From a link (local helper) — full branch only
+## From a link (local helper) — optional, off by default
+
+Build with link mode using `npm run build:link` (a normal `npm run build` leaves it out).
 
 The plugin has a **From a link** tab: paste a website address, click **Fetch design**, and the layers appear. A plugin cannot render a web
 page by itself, so this uses a small **helper** that runs on your own computer and drives your own Chrome (hidden), with the same capture

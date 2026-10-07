@@ -4,8 +4,9 @@ import path from 'node:path';
 import { png } from './icons.mjs';
 
 const watch = process.argv.includes('--watch');
-// "From a link" mode (plugin tab + local helper). ON by default here; the store branch turns it off (WEB2FIG_LINK=0).
-const LINK_MODE = (process.env.WEB2FIG_LINK ?? '1') !== '0';
+// "From a link" mode (plugin tab + local helper) is switched OFF by default for now.
+// Turn it on with:  npm run build:link   (or WEB2FIG_LINK=1 / --link).
+const LINK_MODE = process.argv.includes('--link') || process.env.WEB2FIG_LINK === '1';
 const dev = watch || process.argv.includes('--dev');
 const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, 'dist');

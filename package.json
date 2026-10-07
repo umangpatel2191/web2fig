@@ -11,7 +11,8 @@
     "test": "tsx --test tests/*.test.ts",
     "check": "npm run typecheck && npm run test && npm run build",
     "qa": "node qa/server.mjs",
-    "helper": "node dist/helper/server.mjs"
+    "helper": "node dist/helper/server.mjs",
+    "build:link": "node scripts/build.mjs --link"
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.141.0",
