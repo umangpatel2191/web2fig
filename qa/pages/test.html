@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Web2Fig QA page</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.4 Arial, Helvetica, sans-serif; color: #111; background: #f6f3ee; }
+  section { position: relative; padding: 20px 30px; border-bottom: 1px dashed #bbb; }
+  h4 { margin: 0 0 8px; font: 600 11px/1 monospace; color: #888; text-transform: uppercase; letter-spacing: .08em; }
+
+  /* 1. inline run that continues after a sibling sentence (the "overlapping text" bug) */
+  .stripe { width: 520px; font-size: 26px; line-height: 34px; margin: 0; font-weight: 400; }
+  .stripe .dark { color: #0a2540; }
+  .stripe .gray { color: #8792a2; }
+
+  /* 2. pseudo-elements */
+  .quote::before { content: "\201C"; color: #c33; font-size: 30px; }
+  .quote::after  { content: "\201D"; color: #c33; font-size: 30px; }
+  .link::after   { content: " \203A"; color: #635bff; font-weight: 700; }
+  .badge::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #1a1; margin-right: 6px; }
+  .deco { position: relative; padding: 14px 18px; background: #fff; border: 1px solid #ddd; width: 300px; }
+  .deco::after { content: ""; position: absolute; right: -10px; top: 50%; width: 20px; height: 20px; background: #f60; transform: translateY(-50%) rotate(45deg); }
+  .sep::after { content: ""; display: block; height: 3px; background: #999; margin-top: 8px; }
+
+  /* 3. backgrounds */
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .bg { width: 200px; height: 110px; border: 1px solid #aaa; background-color: #fff; font-size: 11px; padding: 4px; }
+  .dots  { background-image: radial-gradient(circle, #e0245e 2px, transparent 2.5px); background-size: 20px 20px; }
+  .grid  { background-image: linear-gradient(#0a84 1px, transparent 1px), linear-gradient(90deg, #0a84 1px, transparent 1px); background-size: 25px 25px; }
+  .svgtile { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'><rect width='15' height='15' fill='%23635bff'/><rect x='15' y='15' width='15' height='15' fill='%23ff9a3c'/></svg>"); background-repeat: repeat; }
+  .repx  { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><circle cx='12' cy='12' r='9' fill='%23118'/></svg>"); background-repeat: repeat-x; background-position: 0 20px; }
+  .pos   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect width='40' height='40' rx='8' fill='%23e33'/></svg>"); background-repeat: no-repeat; background-position: right 10px bottom 10px; background-size: 40px 40px; }
+
+  /* 4. paint order */
+  .stack { height: 150px; }
+  .stack .panel { position: absolute; left: 30px; top: 40px; width: 300px; height: 90px; background: #fff; border: 1px solid #999; padding: 8px; }
+  .stack .under { position: absolute; left: 60px; top: 50px; width: 120px; height: 100px; background: rgba(255, 0, 100, .85); z-index: -1; }
+  .ctxroot { isolation: isolate; }
+  .stack .over  { position: absolute; left: 250px; top: 70px; width: 140px; height: 60px; background: rgba(0, 120, 255, .85); z-index: 3; color: #fff; padding: 6px; }
+  /* a dropdown that overflows its static parent and must sit above the NEXT section's content */
+  .menu { position: relative; width: 140px; background: #222; color: #fff; padding: 8px; }
+  .menu .drop { position: absolute; left: 0; top: 100%; width: 220px; height: 70px; background: #ffd23f; color: #000; padding: 6px; z-index: 5; }
+  .next { height: 60px; background: #cde; padding: 10px; }
+
+  /* 5. transforms */
+  .tf { height: 120px; }
+  .tf .a { position: absolute; left: 60px; top: 40px; width: 90px; height: 40px; background: #635bff; color: #fff; padding: 8px; transform: rotate(-12deg); }
+  .tf .b { position: absolute; left: 220px; top: 30px; width: 100px; height: 60px; background: #0b7; color: #fff; padding: 6px; transform: scale(1.2) skewX(-10deg); transform-origin: left top; }
+  .tf .b i { display: block; font-style: normal; background: #fff3; padding: 2px; margin-top: 4px; }
+  .tf .c { position: absolute; left: 420px; top: 30px; width: 90px; height: 60px; background: #f60; transform: translate(10px, 8px) rotate(90deg); }
+
+  /* 6. misc */
+  .misc { min-height: 150px; }
+  .pua { font-family: "FakeIcons", monospace; }
+  .fade { opacity: .4; }
+  .hidden-indent { text-indent: -9999px; white-space: nowrap; overflow: hidden; width: 100px; height: 20px; }
+  .fixedbar { position: fixed; top: 0; right: 0; background: #111; color: #fff; padding: 6px 12px; z-index: 50; font-size: 12px; }
+  /* regression: site rules that match <span>::before/::after (the temporary pseudo nodes are spans) */
+  .nav span::after { content: ""; display: block; height: 2px; background: #635bff; }
+  .nav span::before { content: "→ "; color: #999; }
+  ol.counter { counter-reset: n; list-style: none; padding: 0; }
+  ol.counter li::before { counter-increment: n; content: counter(n) ". "; font-weight: 700; }
+  /* 7. regressions found on real sites */
+  .acc-body { overflow: hidden; height: 0; }                 /* collapsed accordion: its text must NOT appear */
+  .plus-bg { height: 40px; background: #123 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><path d='M12 2V22M2 12H22' stroke='white' stroke-width='3'/></svg>") no-repeat 96% 8px; background-size: 0px auto; color: #fff; padding: 10px; } /* 0px-wide bg image: must not become a white bar */
+  .track { overflow: hidden; width: 420px; height: 70px; border: 1px solid #999; background: #fff; }
+  .list { display: flex; gap: 10px; width: 420px; transform: translateX(-1300px); }  /* Splide-style: layout x is far right, the transform brings it into view */
+  .list .slide { flex: none; width: 200px; height: 60px; margin-top: 5px; background: #635bff; color: #fff; padding: 8px; }
+  /* 8. text + image extras */
+  .clamp { width: 260px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; background: #fff; padding: 4px; }
+  .ell { width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #fff; padding: 4px; }
+  .stroke { font: 800 40px/1 Arial; color: transparent; -webkit-text-stroke: 2px #635bff; }
+  .shadowed { width: 90px; height: 50px; background: #fff; filter: drop-shadow(6px 8px 6px rgba(0,0,0,.45)); }
+  .cover { width: 160px; height: 90px; object-fit: cover; object-position: 100% 50%; border: 1px solid #999; }
+  /* 9. shapes, masks, exotic gradients */
+  .shapes { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .tri { width: 120px; height: 100px; background: linear-gradient(135deg, #635bff, #ff6ad5); clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+  .circ { width: 100px; height: 100px; background: #0b7; clip-path: circle(50% at 50% 50%); }
+  .insetr { width: 120px; height: 80px; background: #f60; clip-path: inset(10px 20px 10px 20px round 14px); }
+  .reveal { width: 160px; height: 40px; background: #222; color: #fff; clip-path: inset(0 0 100% 0); }   /* hidden "before the animation" state: must be skipped */
+  .fade { width: 140px; height: 80px; background: #111; -webkit-mask-image: linear-gradient(to right, #000, transparent); mask-image: linear-gradient(to right, #000, transparent); }
+  .conic { width: 140px; height: 100px; background: conic-gradient(from 30deg at 30% 60%, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00); }
+  .rep { width: 140px; height: 100px; background: repeating-linear-gradient(45deg, #635bff 0 8px, #fff 8px 16px); }
+</style>
+</head>
+<body>
+<div class="fixedbar">Fixed bar (z 50)</div>
+
+<section id="s1"><h4>1 · inline run continues the line</h4>
+  <h2 class="stripe"><span class="dark">Flexible solutions.</span> <span class="gray">Run your business with a comprehensive set of payments and financial tools – designed to work individually or together.</span></h2>
+</section>
+
+<section id="s2"><h4>2 · pseudo-elements</h4>
+  <p class="quote">Real quotes, in-flow</p>
+  <p><a class="link" href="#">Read the guide</a> &nbsp; <span class="badge">Online</span></p>
+  <div class="deco">Decoration with a rotated absolute ::after</div>
+  <p class="sep">Heading with in-flow separator</p>
+  <ol class="counter"><li>Counter item (unsupported: warns)</li></ol>
+</section>
+
+<section id="s3"><h4>3 · backgrounds</h4>
+  <div class="row">
+    <div class="bg dots">radial dots</div>
+    <div class="bg grid">line grid</div>
+    <div class="bg svgtile">svg tile</div>
+    <div class="bg repx">repeat-x</div>
+    <div class="bg pos">positioned</div>
+  </div>
+</section>
+
+<section id="s4" class="stack ctxroot"><h4>4 · paint order</h4>
+  <div class="under"></div>
+  <div class="panel">Panel (static z) — pink block is z-index:-1 inside an isolated context: it must stay <b>behind</b> this panel.</div>
+  <div class="over">z-index 3 overlay</div>
+</section>
+<section id="s4b"><h4>4b · overflowing dropdown above next section</h4>
+  <div class="menu">Menu<div class="drop">Dropdown (z 5) overlaps the section below</div></div>
+</section>
+<section class="next" id="s4c">Next section – dropdown must paint over this text</section>
+
+<section id="s5" class="tf"><h4>5 · transforms</h4>
+  <div class="a">rotate −12°</div>
+  <div class="b">scale + skew<i>child text</i></div>
+  <div class="c"></div>
+</section>
+
+<section id="s5b" class="nav"><h4>5b · site rules on span::before / ::after</h4><span>Underlined nav span</span></section>
+
+<section id="s6" class="misc"><h4>6 · misc</h4>
+  <p class="fade">Opacity wrapper: <span style="opacity:.5">half-opaque inline span</span> text</p>
+  <div class="hidden-indent">image replacement text</div>
+  <p><input type="checkbox" checked /> checked &nbsp; <input type="checkbox" /> unchecked &nbsp; <input type="radio" checked /> radio</p>
+  <iframe id="frame" style="width:300px;height:60px;border:1px solid #888" srcdoc="<body style='margin:0;font:14px Arial;background:#eaffea'><p style='margin:8px'>Same-origin iframe content</p></body>"></iframe>
+  <canvas id="cv" width="120" height="50" style="border:1px solid #888"></canvas>
+</section>
+
+<section id="s7"><h4>7 · collapsed accordion / 0px bg / transformed carousel</h4>
+  <div class="acc"><button>FAQ question</button><div class="acc-body"><p>HIDDEN ANSWER must not be captured</p></div></div>
+  <div class="plus-bg">Row with a 0px background icon</div>
+  <div class="track"><div class="list"><div class="slide">Slide 1</div><div class="slide">Slide 2</div><div class="slide">Slide 3</div><div class="slide">Slide 4</div><div class="slide">Slide 5</div><div class="slide">Slide 6</div><div class="slide">Slide 7</div><div class="slide">Slide 8</div><div class="slide">Slide 9</div><div class="slide">Slide 10</div><div class="slide">Slide 11</div><div class="slide">Slide 12</div><div class="slide">Slide 13</div></div></div>
+</section>
+
+<section id="s8"><h4>8 · links, stroke, clamp, ellipsis, drop-shadow, object-position</h4>
+  <p><a href="https://example.com/pricing">Pricing page link</a> · <a href="#">hash link (ignored)</a></p>
+  <div class="stroke">STROKE</div>
+  <p class="clamp">Line clamp two lines: Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam.</p>
+  <p class="ell">Single line truncated with a text-overflow ellipsis that is far too long to fit</p>
+  <div class="shadowed"></div>
+  <img class="cover" alt="Wide hero" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200'><rect width='400' height='200' fill='%23ffd23f'/><circle cx='60' cy='100' r='50' fill='%23e33'/><circle cx='340' cy='100' r='50' fill='%2305a'/></svg>" />
+</section>
+
+<section id="s9"><h4>9 · clip-path · mask · conic / repeating gradients</h4>
+  <div class="shapes">
+    <div class="tri"></div><div class="circ"></div><div class="insetr"></div>
+    <div class="reveal">REVEAL-HIDDEN text</div>
+    <div class="fade"></div><div class="conic"></div><div class="rep"></div>
+  </div>
+</section>
+
+<script>
+  const g = document.getElementById('cv').getContext('2d');
+  g.fillStyle = '#635bff'; g.fillRect(0, 0, 60, 50); g.fillStyle = '#ff9a3c'; g.fillRect(60, 0, 60, 50);
+  g.fillStyle = '#fff'; g.font = '14px Arial'; g.fillText('canvas', 32, 30);
+</script>
+<script src="/dist/harness.js"></script>
+</body>
+</html>

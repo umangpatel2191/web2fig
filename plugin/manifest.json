@@ -1,0 +1,19 @@
+{
+  "name": "Web2Fig — Website to Figma",
+  "id": "0000000000000000000",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": [
+    "figma"
+  ],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ],
+    "devAllowedDomains": [
+      "http://localhost:5810"
+    ]
+  }
+}

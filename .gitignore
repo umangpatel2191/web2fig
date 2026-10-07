@@ -1,0 +1,17 @@
+# dependencies and build output
+node_modules/
+dist/
+release/
+qa/dist/
+
+# local tooling / assistants
+.claude/
+.vscode/
+.idea/
+
+# misc
+*.log
+*.tmp
+*.tmp.mjs
+.DS_Store
+Thumbs.db

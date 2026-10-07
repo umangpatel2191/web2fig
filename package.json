@@ -1,0 +1,27 @@
+{
+  "name": "web2fig",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Web2Fig: capture any website as editable Figma layers.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc -p tsconfig.extension.json && tsc -p tsconfig.plugin.json && tsc -p tsconfig.ui.json && tsc -p tsconfig.helper.json",
+    "test": "tsx --test tests/*.test.ts",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "qa": "node qa/server.mjs",
+    "helper": "node dist/helper/server.mjs"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.141.0",
+    "@types/chrome": "^0.3.4",
+    "@types/node": "^26.6.4",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.12.0"
+  }
+}
