@@ -4,9 +4,9 @@ Web2Fig helper on a Hugging Face *Gradio* Space.
 The Space's public address is the helper's API, which the Web2Fig Figma plugin calls. Inside, `server.mjs` (a Node
 server) does the work on a private port, and this file is a thin front door:
 
-  * everything except /ui is forwarded as-is to the Node helper (/health, /capture, ...);
-  * /ui is a tiny Gradio page with one @spaces.GPU function. It is never used for real work. Accounts that can only
-    create *ZeroGPU* Spaces need such a function, otherwise the Space refuses to start ("No @spaces.GPU function").
+  * /health, /capture and /jobs/* are forwarded as-is to the Node helper;
+  * the Gradio page at / is a tiny placeholder with one @spaces.GPU function. It is never used for real work, but
+    accounts that can only create *ZeroGPU* Spaces need one, otherwise the Space refuses to start.
 
 Node and Chrome are fetched on first start if the machine does not already have them.
 """
@@ -23,10 +23,9 @@ import urllib.request
 import gradio as gr
 import httpx
 import spaces
-import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import Request
 from starlette.background import BackgroundTask
-from starlette.responses import StreamingResponse
+from starlette.responses import Response, StreamingResponse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_PORT = int(os.environ.get("PORT") or os.environ.get("GRADIO_SERVER_PORT") or "7860")
@@ -94,29 +93,44 @@ def gpu_placeholder(text: str) -> str:
 
 demo = gr.Interface(fn=gpu_placeholder, inputs="text", outputs="text", title="Web2Fig helper", api_name=False)
 
-app = FastAPI()
-app = gr.mount_gradio_app(app, demo, path="/ui")  # mounted first so the catch-all below does not shadow it
-
 client = httpx.AsyncClient(base_url=f"http://127.0.0.1:{NODE_PORT}", timeout=None)
-HOP = {"connection", "keep-alive", "transfer-encoding", "te", "trailer", "upgrade", "proxy-authenticate", "proxy-authorization"}
+HOP = {"connection", "keep-alive", "transfer-encoding", "te", "trailer", "upgrade", "proxy-authenticate", "proxy-authorization", "host"}
+CORS = {
+    "access-control-allow-origin": "*",
+    "access-control-allow-headers": "content-type, x-web2fig",
+    "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+}
 
 
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
-async def forward(path: str, request: Request):
-    headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP and k.lower() != "host"}
+async def forward(request: Request):
+    """Pass the request to the Node helper and stream its answer back."""
+    if request.method == "OPTIONS":
+        return Response(status_code=204, headers=CORS)
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP}
     if "x-forwarded-for" not in {k.lower() for k in headers} and request.client:
         headers["x-forwarded-for"] = request.client.host
     try:
         upstream = await client.send(
-            client.build_request(request.method, "/" + path, params=request.query_params, headers=headers, content=request.stream()),
+            client.build_request(request.method, request.url.path, params=request.query_params, headers=headers, content=request.stream()),
             stream=True,
         )
     except httpx.ConnectError:
-        return StreamingResponse(iter([b'{"ok":false,"error":"The helper is still starting. Try again in a few seconds."}']), status_code=503, media_type="application/json")
-    out = {k: v for k, v in upstream.headers.items() if k.lower() not in HOP}
+        return Response(b'{"ok":false,"error":"The helper is still starting. Try again in a few seconds."}', status_code=503, media_type="application/json", headers=CORS)
+    out = {k: v for k, v in upstream.headers.items() if k.lower() not in HOP and not k.lower().startswith("access-control-")}
+    out.update(CORS)
     return StreamingResponse(upstream.aiter_raw(), status_code=upstream.status_code, headers=out, background=BackgroundTask(upstream.aclose))
 
 
 if __name__ == "__main__":
     threading.Thread(target=run_node_forever, daemon=True).start()
-    uvicorn.run(app, host="0.0.0.0", port=PUBLIC_PORT, log_level="warning")
+    # The standard ZeroGPU launch (so the Space starts), plus our routes on Gradio's own server.
+    try:
+        demo.launch(server_name="0.0.0.0", server_port=PUBLIC_PORT, prevent_thread_lock=True, show_api=False, ssr_mode=False, strict_cors=False)
+    except TypeError:
+        demo.launch(server_name="0.0.0.0", server_port=PUBLIC_PORT, prevent_thread_lock=True, show_api=False)
+    fastapi_app = demo.app
+    for path in ("/health", "/capture", "/jobs/{rest:path}"):
+        fastapi_app.add_api_route(path, forward, methods=["GET", "POST", "DELETE", "OPTIONS"], include_in_schema=False)
+        fastapi_app.router.routes.insert(0, fastapi_app.router.routes.pop())  # ahead of Gradio's own routes
+    log("ready")
+    demo.block_thread()
