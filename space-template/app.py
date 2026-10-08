@@ -10,6 +10,7 @@ server) does the work on a private port, and this file is a thin front door:
 
 Node and Chrome are fetched on first start if the machine does not already have them.
 """
+import inspect
 import os
 import platform
 import shutil
@@ -124,10 +125,9 @@ async def forward(request: Request):
 if __name__ == "__main__":
     threading.Thread(target=run_node_forever, daemon=True).start()
     # The standard ZeroGPU launch (so the Space starts), plus our routes on Gradio's own server.
-    try:
-        demo.launch(server_name="0.0.0.0", server_port=PUBLIC_PORT, prevent_thread_lock=True, show_api=False, ssr_mode=False, strict_cors=False)
-    except TypeError:
-        demo.launch(server_name="0.0.0.0", server_port=PUBLIC_PORT, prevent_thread_lock=True, show_api=False)
+    wanted = dict(server_name="0.0.0.0", server_port=PUBLIC_PORT, prevent_thread_lock=True, ssr_mode=False, strict_cors=False)
+    supported = inspect.signature(gr.Blocks.launch).parameters  # newer Gradio versions drop some options
+    demo.launch(**{k: v for k, v in wanted.items() if k in supported})
     fastapi_app = demo.app
     for path in ("/health", "/capture", "/jobs/{rest:path}"):
         fastapi_app.add_api_route(path, forward, methods=["GET", "POST", "DELETE", "OPTIONS"], include_in_schema=False)
