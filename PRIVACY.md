@@ -19,4 +19,4 @@ You can remove it by uninstalling the extension.
 - `storage`: remember your settings and last capture.
 - `clipboardWrite`, `offscreen`: copy the capture to your clipboard.
 
-Contact: memonvaris@gmail.com
+Contact: umangp737@gmail.com
