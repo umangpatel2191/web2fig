@@ -51,20 +51,17 @@ top, so those sections can still capture in their starting state. Capture those 
 
 Resize the browser window (or use DevTools device mode) and capture again — each capture is one viewport width.
 
-## From a link (local helper) — optional, off by default
+## From a link (paste a link in the plugin)
 
-Build with link mode using `npm run build:link` (a normal `npm run build` leaves it out).
+This version of the plugin has a **From a link** tab: paste a website address, click **Fetch design**, and the layers appear — no browser extension needed.
+A plugin cannot render a page itself, so the plugin asks a small **Web2Fig server** to open the link in a hidden Chrome and run the same capture engine.
 
-The plugin has a **From a link** tab: paste a website address, click **Fetch design**, and the layers appear. A plugin cannot render a web
-page by itself, so this uses a small **helper** that runs on your own computer and drives your own Chrome (hidden), with the same capture
-engine as the extension.
+- **Hosted (default build):** the server runs for free on a Hugging Face **Gradio Space** (see `space-template/` and `npm run build:space`). `app.py` starts the Node server (`helper/server.ts`), which fetches its own Chrome on first start.
+- **Local:** `npm run build -- --helper-url=http://localhost:5810`, then run `dist/helper/Start Web2Fig Helper.bat`. It uses your own Chrome and has no limits.
 
-1. Start the helper: run `dist/helper/Start Web2Fig Helper.bat` (Mac: `start-web2fig-helper.command`), or `npm run helper` from the repo. Leave it open.
-2. In Figma: Plugins → Development → Web2Fig → **From a link**. A green "Helper connected" shows when it is found.
+The hosted server refuses links to private networks, rate-limits each visitor, and only accepts calls from the Figma plugin. It cannot capture pages behind a login, and some sites block servers: use the browser extension for those.
 
-It listens on `localhost:5810` only and refuses requests that come from web pages. It cannot capture pages behind a login, and some sites block
-automated browsers (use the extension for those). Figma only allows a plugin to talk to `localhost` when it is loaded from a manifest
-(**Import plugin from manifest…**), so this mode is **not** part of the store release: see the `release/store` branch.
+Build options: `npm run build` (hosted), `npm run build:local`, `npm run build:paste` (no link tab, no network), `npm run build:space` (the Space bundle).
 
 ## Responsive set
 

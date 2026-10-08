@@ -4,9 +4,15 @@ import path from 'node:path';
 import { png } from './icons.mjs';
 
 const watch = process.argv.includes('--watch');
-// "From a link" mode (plugin tab + local helper) is switched OFF by default for now.
-// Turn it on with:  npm run build:link   (or WEB2FIG_LINK=1 / --link).
-const LINK_MODE = process.argv.includes('--link') || process.env.WEB2FIG_LINK === '1';
+// "From a link" mode (plugin tab) is ON in this version. The plugin talks to the Web2Fig server at HELPER_URL:
+//   npm run build                                   → hosted server (Hugging Face Space)
+//   npm run build -- --helper-url=http://localhost:5810   → a helper running on your own computer
+//   npm run build -- --no-link                      → paste-only plugin (no link tab, no network)
+const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+const LINK_MODE = !process.argv.includes('--no-link') && process.env.WEB2FIG_LINK !== '0';
+const HELPER_URL = (arg('helper-url') ?? process.env.WEB2FIG_HELPER_URL ?? 'https://umangpatel2191-web2fig-helper.hf.space').replace(/\/+$/, '');
+// WEB2FIG_CLOUD=1 is only for testing the hosted wording against a local copy of the server
+const CLOUD = process.env.WEB2FIG_CLOUD === '1' || !/^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(HELPER_URL);
 const dev = watch || process.argv.includes('--dev');
 const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, 'dist');
@@ -53,7 +59,7 @@ const copyExt = () => {
 
 /* ---------- plugin ---------- */
 const pluginMain = { ...common, entryPoints: [p('plugin/src/code.ts')], outfile: path.join(plug, 'code.js'), format: 'iife', target: 'es2017' };
-const uiBuildOpts = { ...common, entryPoints: [p('plugin/src/ui/ui.ts')], write: false, format: 'iife', target: 'es2019', define: { __LINK_MODE__: String(LINK_MODE) } };
+const uiBuildOpts = { ...common, entryPoints: [p('plugin/src/ui/ui.ts')], write: false, format: 'iife', target: 'es2019', define: { __LINK_MODE__: String(LINK_MODE), __HELPER_URL__: JSON.stringify(HELPER_URL), __CLOUD__: String(LINK_MODE && CLOUD) } };
 
 async function buildUi() {
   const out = await esbuild.build(uiBuildOpts);
@@ -68,7 +74,14 @@ async function buildUi() {
 const copyPlugin = () => {
   const manifest = JSON.parse(fs.readFileSync(p('plugin/manifest.json'), 'utf8'));
   // Without link mode the plugin makes no network requests at all.
-  manifest.networkAccess = LINK_MODE ? { allowedDomains: ['none'], devAllowedDomains: ['http://localhost:5810'] } : { allowedDomains: ['none'] };
+  if (!LINK_MODE) manifest.networkAccess = { allowedDomains: ['none'] };
+  else if (CLOUD)
+    manifest.networkAccess = {
+      allowedDomains: [HELPER_URL],
+      reasoning: 'Link mode: the plugin sends the website address you paste to the Web2Fig server (hosted on Hugging Face), which opens the page in a browser and returns the converted layers. No Figma file data is sent.',
+      devAllowedDomains: ['http://localhost:5810'],
+    };
+  else manifest.networkAccess = { allowedDomains: ['none'], devAllowedDomains: [HELPER_URL] };
   fs.writeFileSync(path.join(plug, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 };
 
@@ -136,7 +149,7 @@ if (watch) {
   copyExt();
   copyPlugin();
   await buildUi();
-  if (LINK_MODE) await buildHelper();
+  if (LINK_MODE && !CLOUD) await buildHelper();
   else {
     try {
       fs.rmSync(helperDir, { recursive: true, force: true });

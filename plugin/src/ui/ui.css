@@ -198,7 +198,8 @@ h1, h2, h3, p { margin: 0; }
 .helper i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--text-2); }
 .helper[data-state="up"] i { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
 .helper[data-state="down"] i, .helper[data-state="nochrome"] i { background: var(--warn); }
-.helper[data-state="checking"] i { animation: pulse 1.2s ease-in-out infinite; }
+.helper[data-state="checking"] i, .helper[data-state="starting"] i { animation: pulse 1.2s ease-in-out infinite; }
+.helper[data-state="starting"] #helperText { color: var(--text-2); }
 .helper[data-state="up"] #helperText { color: var(--ok); }
 .helper[data-state="down"] #helperText, .helper[data-state="nochrome"] #helperText { color: var(--warn); }
 .helper .link { margin-left: auto; font-size: 11px; }

@@ -5,12 +5,15 @@ import { BRAND, logoSvg } from '../../../shared/brand';
  * esbuild replaces it with a literal, so the store build contains none of the link-mode code.
  */
 declare const __LINK_MODE__: boolean;
+/** Address of the Web2Fig server (the hosted one, or http://localhost:5810 for a local helper) and whether it is hosted. */
+declare const __HELPER_URL__: string;
+declare const __CLOUD__: boolean;
 import { MAGIC, SCHEMA_VERSION, type CaptureFile } from '../../../shared/schema';
 
 type Screen = 'empty' | 'fetching' | 'ready' | 'importing' | 'done' | 'error';
 type Tab = 'link' | 'paste';
 type SizeChoice = 'desktop' | 'tablet' | 'mobile' | 'all';
-type HelperState = 'checking' | 'up' | 'down' | 'nochrome';
+type HelperState = 'checking' | 'starting' | 'up' | 'down' | 'nochrome';
 let helperError = '';
 
 interface State {
@@ -30,7 +33,7 @@ interface State {
 
 const state: State = { screen: 'empty', capture: null, options: { ...DEFAULT_IMPORT_OPTIONS }, result: null, error: '', notice: '', tab: __LINK_MODE__ ? 'link' : 'paste', url: '', size: 'desktop', scroll: true, helper: 'checking' };
 
-const HELPER = 'http://localhost:5810';
+const HELPER = __HELPER_URL__;
 const SIZE_PX: Record<Exclude<SizeChoice, 'all'>, number> = { desktop: 1440, tablet: 768, mobile: 390 };
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const app = document.getElementById('app') as HTMLElement;
@@ -99,7 +102,9 @@ function paintHelper(): void {
   const el = document.getElementById('helper');
   if (!el) return;
   el.dataset.state = state.helper;
-  const text = { checking: 'Looking for the helper…', up: 'Helper connected', down: 'Helper not running', nochrome: 'Helper is running, but Chrome was not found' }[state.helper];
+  const text = __CLOUD__
+    ? { checking: 'Connecting to the Web2Fig server…', starting: 'Server is starting up (the first request can take a minute)…', up: 'Connected to the Web2Fig server', down: 'Server is waking up or unreachable. Retrying…', nochrome: 'Server is starting up…' }[state.helper]
+    : { checking: 'Looking for the helper…', starting: 'Helper is getting Chrome ready (first start only)…', up: 'Helper connected', down: 'Helper not running', nochrome: 'Helper is running, but Chrome was not found' }[state.helper];
   const t = document.getElementById('helperText');
   if (t) t.textContent = text;
   const d = document.getElementById('helperErr');
@@ -111,9 +116,9 @@ function paintHelper(): void {
 
 async function checkHelper(): Promise<void> {
   try {
-    const r = await hf('/health', {}, 2500);
+    const r = await hf('/health', {}, __CLOUD__ ? 15_000 : 2500); // a sleeping hosted server needs a moment to wake
     const j = (await r.json()) as { ok?: boolean; chrome?: string };
-    state.helper = j.ok ? (j.chrome === 'missing' ? 'nochrome' : 'up') : 'down';
+    state.helper = j.ok ? (j.chrome === 'missing' ? 'nochrome' : j.chrome === 'downloading' ? 'starting' : 'up') : 'down';
     helperError = '';
   } catch (e) {
     state.helper = 'down';
@@ -133,7 +138,10 @@ let fetchJobId: string | null = null;
 
 function friendly(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e);
-  if (/failed to fetch|networkerror|aborted|load failed/i.test(m)) return 'Could not reach the Web2Fig helper. Start “Start Web2Fig Helper” on this computer (keep its window open), then try again.';
+  if (/failed to fetch|networkerror|aborted|load failed/i.test(m))
+    return __CLOUD__
+      ? 'Could not reach the Web2Fig server. It may be waking up: wait a few seconds and try again.'
+      : 'Could not reach the Web2Fig helper. Start “Start Web2Fig Helper” on this computer (keep its window open), then try again.';
   return m;
 }
 
@@ -244,13 +252,13 @@ function linkPanel(): string {
         <span class="knob" aria-hidden="true"></span>
         ${sizes.map(([k, label]) => `<button type="button" role="radio" data-size="${k}" aria-checked="${k === state.size}">${label}</button>`).join('')}
       </div>
-      <p class="hint">${state.size === 'all' ? 'Desktop 1440 + tablet 768 + mobile 390, side by side.' : `Viewport width ${SIZE_PX[state.size as Exclude<SizeChoice, 'all'>]}px.`}</p>
+      <p class="hint">${state.size === 'all' ? `Desktop 1440 + tablet 768 + mobile 390, side by side.${__CLOUD__ ? ' Counts as 3 captures.' : ''}` : `Viewport width ${SIZE_PX[state.size as Exclude<SizeChoice, 'all'>]}px.`}</p>
       <label class="opt flat"><span><b>Scroll the page first</b><i>Plays reveal animations, loads lazy images</i></span><input type="checkbox" id="optScroll" ${state.scroll ? 'checked' : ''} /><span class="switch"></span></label>
       ${state.notice ? `<div class="or bad" role="alert" style="margin:10px 0 0">${esc(state.notice)}</div>` : ''}
       <button class="primary" id="fetchBtn" type="button" style="margin-top:12px">Fetch design</button>
       <div class="helper" id="helper" data-state="${state.helper}"><i></i><span id="helperText"></span><button class="link" id="recheck" type="button">Check again</button></div>
       <div class="hint" id="helperErr" style="word-break:break-word"></div>
-      <details class="setup" id="setup">
+      ${__CLOUD__ ? `<details class="setup" id="setup"><summary>How link mode works</summary><p>Your link is opened by the Web2Fig server in a private browser. The page is turned into layers, sent back to this plugin and then discarded: nothing is stored. Pages that need a login, and sites that block servers, can't be captured this way: use the Web2Fig browser extension for those. To keep the free server fast, each visitor gets a limited number of captures per hour.</p></details>` : `<details class="setup" id="setup">
         <summary>How to start the helper</summary>
         <ol>
           <li>Open the <b>helper</b> folder that came with the plugin.</li>
@@ -259,7 +267,7 @@ function linkPanel(): string {
           <li>To test it, open <b>http://localhost:5810</b> in Chrome. You should see a green check.</li>
         </ol>
         <p>It runs on your computer and uses your own Chrome. Nothing is uploaded.</p>
-      </details>
+      </details>`}
     </div>`;
 }
 
@@ -279,7 +287,7 @@ function emptyScreen(): string {
     </div>
     ${__LINK_MODE__ ? tabsMarkup(link) : ''}
     ${__LINK_MODE__ && link ? linkPanel() : pastePanel()}
-    <div class="privacy">${ICON_SHIELD}<span>Everything runs locally. Nothing leaves your computer.</span></div>`);
+    <div class="privacy">${ICON_SHIELD}<span>${__CLOUD__ && link ? 'Link mode opens the page on the Web2Fig server. Nothing is stored.' : 'Everything runs locally. Nothing leaves your computer.'}</span></div>`);
 }
 
 function fetchingScreen(): string {

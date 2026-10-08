@@ -13,6 +13,8 @@ You can remove it by uninstalling the extension.
 
 **Network:** to include images, the extension downloads the images that the captured page itself uses, from the page's own servers.
 
+**Link mode (optional, in the Figma plugin):** if you paste a website address into the plugin's "From a link" tab, that address and your capture options (size, scroll setting) are sent to the Web2Fig server, hosted on Hugging Face Spaces. The server opens the page in a temporary browser, converts it to layers, sends the result back to the plugin and then discards it. Pages and results are not stored or logged by us. To prevent abuse the server briefly keeps your connection's address in memory (not on disk) to apply a per-hour limit. No Figma file content is ever sent. Pasting a capture made with the browser extension never contacts any server.
+
 **Permissions and why:**
 - `<all_urls>` (host access): download the captured page's images, which are often on other domains.
 - `activeTab`, `scripting`: read the page you are capturing.

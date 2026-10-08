@@ -12,7 +12,9 @@
     "check": "npm run typecheck && npm run test && npm run build",
     "qa": "node qa/server.mjs",
     "helper": "node dist/helper/server.mjs",
-    "build:link": "node scripts/build.mjs --link"
+    "build:space": "node scripts/build-space.mjs",
+    "build:paste": "node scripts/build.mjs --no-link",
+    "build:local": "node scripts/build.mjs --helper-url=http://localhost:5810"
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.141.0",
