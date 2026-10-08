@@ -1,9 +1,12 @@
 """
 Web2Fig helper on a Hugging Face *Gradio* Space.
 
-A Gradio Space simply runs this file. It starts the Web2Fig helper (a Node server, `server.mjs`) on the port the Space
-exposes, and keeps it running. There is no Gradio UI: the Space's public address is the helper's API, which the
-Web2Fig Figma plugin calls. Open the address in a browser and you should see a green "Web2Fig helper is running".
+The Space's public address is the helper's API, which the Web2Fig Figma plugin calls. Inside, `server.mjs` (a Node
+server) does the work on a private port, and this file is a thin front door:
+
+  * everything except /ui is forwarded as-is to the Node helper (/health, /capture, ...);
+  * /ui is a tiny Gradio page with one @spaces.GPU function. It is never used for real work. Accounts that can only
+    create *ZeroGPU* Spaces need such a function, otherwise the Space refuses to start ("No @spaces.GPU function").
 
 Node and Chrome are fetched on first start if the machine does not already have them.
 """
@@ -13,11 +16,21 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import threading
 import time
 import urllib.request
 
+import gradio as gr
+import httpx
+import spaces
+import uvicorn
+from fastapi import FastAPI, Request
+from starlette.background import BackgroundTask
+from starlette.responses import StreamingResponse
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-PORT = os.environ.get("PORT") or os.environ.get("GRADIO_SERVER_PORT") or "7860"
+PUBLIC_PORT = int(os.environ.get("PORT") or os.environ.get("GRADIO_SERVER_PORT") or "7860")
+NODE_PORT = 5810
 NODE_VERSION = "20.18.0"
 TOOLS = os.path.join("/tmp", "web2fig-tools")
 
@@ -55,26 +68,55 @@ def ensure_node():
     return target
 
 
-def main():
+def run_node_forever():
     node = ensure_node()
     log(f"using Node at {node}")
     env = dict(os.environ)
     env.update(
         {
             "WEB2FIG_PUBLIC": "1",
-            "PORT": str(PORT),
+            "PORT": str(NODE_PORT),
             "WEB2FIG_CACHE": os.path.join("/tmp", "web2fig-chrome"),
             "HOME": os.environ.get("HOME", "/tmp"),
         }
     )
-    while True:  # restart the server if it ever exits
+    while True:  # restart the helper if it ever exits
         code = subprocess.call([node, "server.mjs"], cwd=HERE, env=env)
-        log(f"server exited with code {code}; restarting in 3s")
+        log(f"helper exited with code {code}; restarting in 3s")
         time.sleep(3)
 
 
-if __name__ == "__main__":
+# ---- the ZeroGPU placeholder (never used for real work) ----
+@spaces.GPU
+def gpu_placeholder(text: str) -> str:
+    return text
+
+
+demo = gr.Interface(fn=gpu_placeholder, inputs="text", outputs="text", title="Web2Fig helper", api_name=False)
+
+app = FastAPI()
+app = gr.mount_gradio_app(app, demo, path="/ui")  # mounted first so the catch-all below does not shadow it
+
+client = httpx.AsyncClient(base_url=f"http://127.0.0.1:{NODE_PORT}", timeout=None)
+HOP = {"connection", "keep-alive", "transfer-encoding", "te", "trailer", "upgrade", "proxy-authenticate", "proxy-authorization"}
+
+
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
+async def forward(path: str, request: Request):
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in HOP and k.lower() != "host"}
+    if "x-forwarded-for" not in {k.lower() for k in headers} and request.client:
+        headers["x-forwarded-for"] = request.client.host
     try:
-        main()
-    except KeyboardInterrupt:
-        sys.exit(0)
+        upstream = await client.send(
+            client.build_request(request.method, "/" + path, params=request.query_params, headers=headers, content=request.stream()),
+            stream=True,
+        )
+    except httpx.ConnectError:
+        return StreamingResponse(iter([b'{"ok":false,"error":"The helper is still starting. Try again in a few seconds."}']), status_code=503, media_type="application/json")
+    out = {k: v for k, v in upstream.headers.items() if k.lower() not in HOP}
+    return StreamingResponse(upstream.aiter_raw(), status_code=upstream.status_code, headers=out, background=BackgroundTask(upstream.aclose))
+
+
+if __name__ == "__main__":
+    threading.Thread(target=run_node_forever, daemon=True).start()
+    uvicorn.run(app, host="0.0.0.0", port=PUBLIC_PORT, log_level="warning")
