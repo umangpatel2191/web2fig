@@ -10,7 +10,7 @@ const watch = process.argv.includes('--watch');
 //   npm run build -- --no-link                      → paste-only plugin (no link tab, no network)
 const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
 const LINK_MODE = !process.argv.includes('--no-link') && process.env.WEB2FIG_LINK !== '0';
-const HELPER_URL = (arg('helper-url') ?? process.env.WEB2FIG_HELPER_URL ?? 'https://umangpatel2191-web2fig-helper.hf.space').replace(/\/+$/, '');
+const HELPER_URL = (arg('helper-url') ?? process.env.WEB2FIG_HELPER_URL ?? 'https://umang2191-web2fig-helper.hf.space').replace(/\/+$/, '');
 // WEB2FIG_CLOUD=1 is only for testing the hosted wording against a local copy of the server
 const CLOUD = process.env.WEB2FIG_CLOUD === '1' || !/^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(HELPER_URL);
 const dev = watch || process.argv.includes('--dev');
