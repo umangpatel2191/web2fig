@@ -61,10 +61,10 @@ function validate(text: string): CaptureFile {
   try {
     data = JSON.parse(text);
   } catch {
-    throw new Error('That isn’t a Web2Fig capture. Use the Web2Fig Chrome extension to capture a page first.');
+    throw new Error('That isn’t a Web2Fig capture. Use the Web2Fig Edge extension to capture a page first.');
   }
   const f = data as Partial<CaptureFile>;
-  if (!f || f.magic !== MAGIC || !f.root) throw new Error('That isn’t a Web2Fig capture. Use the Web2Fig Chrome extension to capture a page first.');
+  if (!f || f.magic !== MAGIC || !f.root) throw new Error('That isn’t a Web2Fig capture. Use the Web2Fig Edge extension to capture a page first.');
   if ((f.version ?? 0) > SCHEMA_VERSION) throw new Error('This capture was made by a newer version of Web2Fig. Update the plugin and try again.');
   f.assets ||= {};
   f.fonts ||= [];
@@ -234,7 +234,7 @@ function pastePanel(): string {
       <textarea id="sink" aria-label="Paste target" tabindex="-1" spellcheck="false"></textarea>
     </div>
     <ol class="steps">
-      <li><span class="n">1</span><div><b>Capture a page</b><span>Click the ${BRAND.name} icon in Chrome.</span></div></li>
+      <li><span class="n">1</span><div><b>Capture a page</b><span>Click the ${BRAND.name} icon in Edge.</span></div></li>
       <li><span class="n">2</span><div><b>It copies itself</b><span>Nothing to download. It is on your clipboard.</span></div></li>
       <li><span class="n">3</span><div><b>Paste here</b><span>Review, then import into your file.</span></div></li>
     </ol>`;
