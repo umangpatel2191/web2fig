@@ -210,6 +210,12 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
 .opt.flat .tile { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); display: grid; place-items: center; color: var(--text-2); background: var(--bg); }
 .opt.flat .tile svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .opt.flat .txt { flex: 1; min-width: 0; }
+.note { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+.note .tile { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); display: grid; place-items: center; color: var(--brand); background: var(--bg); }
+.note .tile svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.note .txt { flex: 1; min-width: 0; }
+.note b { display: block; font-size: 12.5px; font-weight: 650; }
+.note i { display: block; font-style: normal; color: var(--text-2); font-size: 11.5px; line-height: 1.45; margin-top: 1px; }
 .linkbox .primary { margin-top: 14px; }
 .helper { display: flex; align-items: center; gap: 9px; margin-top: 14px; padding: 11px 13px; border-radius: 11px; background: var(--bg-2); border: 1px solid var(--border); font-size: 12px; font-weight: 600; }
 .helper i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--text-2); }

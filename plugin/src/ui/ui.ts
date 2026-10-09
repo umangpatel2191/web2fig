@@ -31,7 +31,7 @@ interface State {
   helper: HelperState;
 }
 
-const state: State = { screen: 'empty', capture: null, options: { ...DEFAULT_IMPORT_OPTIONS }, result: null, error: '', notice: '', tab: __LINK_MODE__ ? 'link' : 'paste', url: '', size: 'desktop', scroll: true, helper: 'checking' };
+const state: State = { screen: 'empty', capture: null, options: { ...DEFAULT_IMPORT_OPTIONS }, result: null, error: '', notice: '', tab: __LINK_MODE__ ? 'link' : 'paste', url: '', size: 'desktop', scroll: true /* always on: not a user option */, helper: 'checking' };
 
 const HELPER = __HELPER_URL__;
 const SIZE_PX: Record<Exclude<SizeChoice, 'all'>, number> = { desktop: 1440, tablet: 768, mobile: 390 };
@@ -254,6 +254,7 @@ function pastePanel(): string {
       <input type="file" id="file" accept=".json,application/json" hidden />
       <textarea id="sink" aria-label="Paste target" tabindex="-1" spellcheck="false"></textarea>
     </div>
+    <div class="note" style="margin-top:12px"><span class="tile">${ic(ICON.scroll, '')}</span><span class="txt"><b>Scroll the page first</b><i>The Edge extension scrolls the whole page before capturing, so animations and lazy images are included. Keep “Scroll through the page first” on.</i></span></div>
     `;
 }
 
@@ -271,7 +272,7 @@ function linkPanel(): string {
         ${sizes.map(([k, label]) => `<button type="button" role="radio" data-size="${k}" aria-checked="${k === state.size}">${ic(sizeIcon[k])}<span>${label}</span></button>`).join('')}
       </div>
       <p class="hint">${state.size === 'all' ? `Desktop 1440 + tablet 768 + mobile 390, side by side.${__CLOUD__ ? ' Counts as 3 captures.' : ''}` : `Viewport width ${SIZE_PX[state.size as Exclude<SizeChoice, 'all'>]}px.`}</p>
-      <label class="opt flat"><span class="tile">${ic(ICON.scroll, '')}</span><span class="txt"><b>Scroll the page first</b><i>Plays reveal animations, loads lazy images</i></span><input type="checkbox" id="optScroll" ${state.scroll ? 'checked' : ''} /><span class="switch"></span></label>
+      <div class="note"><span class="tile">${ic(ICON.scroll, '')}</span><span class="txt"><b>The page is scrolled first</b><i>Automatically, so reveal animations play and lazy images load.</i></span></div>
       ${state.notice ? `<div class="or bad" role="alert" style="margin:10px 0 0">${esc(state.notice)}</div>` : ''}
       <button class="primary" id="fetchBtn" type="button"><span>Fetch design</span>${ic(ICON.arrow, '')}</button>
       <div class="helper" id="helper" data-state="${state.helper}"><i></i><span id="helperText"></span><button class="link" id="recheck" type="button">Check again</button></div>
@@ -558,7 +559,6 @@ function bind(): void {
             $('url')?.focus();
           }),
         );
-        $<HTMLInputElement>('optScroll')!.addEventListener('change', (e) => (state.scroll = (e.target as HTMLInputElement).checked));
         $('fetchBtn')!.addEventListener('click', () => void startFetch());
         $('recheck')!.addEventListener('click', () => {
           state.helper = 'checking';
@@ -591,6 +591,7 @@ function bind(): void {
       $('import')!.addEventListener('click', startImport);
       $('discard')!.addEventListener('click', () => {
         state.capture = null;
+        state.size = 'desktop';
         go('empty');
       });
       break;
@@ -603,6 +604,7 @@ function bind(): void {
     case 'done':
       $('again')!.addEventListener('click', () => {
         state.capture = null;
+        state.size = 'desktop';
         go('empty');
       });
       break;
