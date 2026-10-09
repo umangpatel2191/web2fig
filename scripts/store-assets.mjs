@@ -37,29 +37,36 @@ const browser = await puppeteer.launch({ executablePath: chromePath, headless: t
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ---------- real UI captures (2× for crisp posters) ---------- */
+const EXT_VERSION = JSON.parse(fs.readFileSync(path.join(dist, 'extension', 'manifest.json'), 'utf8')).version;
 const SAMPLE = { title: 'Northwind: design & brand studio', url: 'https://northwind.example/', layers: 1284, texts: 312, images: 46, bytes: 742000, at: Date.now() - 90_000, copied: true, warnings: [] };
 
 async function shotPopup(state) {
   const p = await browser.newPage();
-  await p.setViewport({ width: 380, height: 700, deviceScaleFactor: 2 });
-  await p.evaluateOnNewDocument((last) => {
+  await p.setViewport({ width: 380, height: 600, deviceScaleFactor: 2 });
+  await p.evaluateOnNewDocument((last, ver) => {
     window.__ls = [];
     window.chrome = {
       runtime: {
-        getManifest: () => ({ version: '0.2.0' }),
+        getManifest: () => ({ version: ver }),
         sendMessage: async (m) => (m.type === 'webframe:getLast' ? { summary: last } : { ok: true, json: null }),
         onMessage: { addListener: (f) => window.__ls.push(f) },
       },
       storage: { local: { get: async () => ({}), set: async () => {} } },
     };
-  }, state === 'idle' ? null : SAMPLE);
+  }, state === 'idle' || state === 'how' ? null : SAMPLE, EXT_VERSION);
   await p.goto('http://localhost:5893/ext/popup.html', { waitUntil: 'load' });
   await sleep(500);
   if (state === 'busy') await p.evaluate(() => window.__ls.forEach((f) => f({ type: 'webframe:progress', stage: 'Capturing images and backgrounds', pct: 0.62 })));
   if (state === 'done') await p.evaluate((s) => window.__ls.forEach((f) => f({ type: 'webframe:done', summary: s })), SAMPLE);
+  if (state === 'how')
+    await p.evaluate(() => {
+      const el = [...document.querySelectorAll('.lbl')].find((e) => /how it works/i.test(e.textContent));
+      const view = document.querySelector('.view-idle');
+      view.scrollTop += el.getBoundingClientRect().top - view.getBoundingClientRect().top - 10;
+    });
   await sleep(700);
-  const el = await p.$('#app');
-  const buf = await el.screenshot({ type: 'png' });
+  const h = await p.evaluate(() => Math.ceil(document.getElementById('app').getBoundingClientRect().height));
+  const buf = await p.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 380, height: Math.min(600, h) }, captureBeyondViewport: false });
   await p.close();
   return 'data:image/png;base64,' + buf.toString('base64');
 }
@@ -98,7 +105,7 @@ async function shotPlugin(state) {
   return 'data:image/png;base64,' + buf.toString('base64');
 }
 
-const shots = { popupIdle: await shotPopup('idle'), popupBusy: await shotPopup('busy'), popupDone: await shotPopup('done'), plugin: await shotPlugin('link'), pluginDone: await shotPlugin('done'), pasteHow: await shotPlugin('paste-how'), linkHow: await shotPlugin('link-how') };
+const shots = { popupIdle: await shotPopup('idle'), popupBusy: await shotPopup('busy'), popupDone: await shotPopup('done'), popupHow: await shotPopup('how'), plugin: await shotPlugin('link'), pluginDone: await shotPlugin('done'), pasteHow: await shotPlugin('paste-how'), linkHow: await shotPlugin('link-how') };
 
 /* ---------- poster pieces ---------- */
 const BASE = `*{box-sizing:border-box;margin:0}body{font-family:"Segoe UI",Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff4e6;overflow:hidden}
@@ -180,6 +187,7 @@ const EDGE = {
   'screenshot-3-ready-to-paste-1280x800': [1280, 800, `<body class="bg" style="width:1280px;height:800px;display:flex;align-items:center;gap:70px;padding:0 90px"><div style="flex:1">${head('Copied. Now paste into Figma', 'The capture is already on your clipboard. Open the Web2Fig plugin in Figma and press Ctrl+V, or skip the extension and paste a link in the plugin instead.')}</div>${popupCard(shots.popupDone, 640)}</body>`],
   'screenshot-4-features-1280x800': [1280, 800, `<body class="bg" style="width:1280px;height:800px;padding:70px 80px"><div class="serif" style="font-size:56px;font-weight:700;letter-spacing:-.03em;margin-bottom:34px">Everything on your computer</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px">${[['cam', 'Real layers', 'Text, images, SVG and shapes, not a flat screenshot.'], ['grid', 'Auto Layout ready', 'Structure the plugin turns into Auto Layout.'], ['resp', 'Responsive set', 'Desktop, tablet and mobile in one go.'], ['copy', 'Copy or download', 'Straight to the clipboard, or save a .json.'], ['lock', 'Private', 'No servers, no account, no tracking.'], ['layers', 'Free', 'No limits, no sign-up.']].map(([i, t, d]) => `<div class="card" style="padding:26px;min-height:240px"><div class="ico" style="width:52px;height:52px;border-radius:15px">${I[i]}</div><div class="serif" style="font-size:30px;font-weight:700;margin:16px 0 8px">${t}</div><div style="font-size:19px;line-height:1.4;opacity:.9">${d}</div></div>`).join('')}</div></body>`],
+  'screenshot-6-guide-and-help-1280x800': [1280, 800, `<body class="bg" style="width:1280px;height:800px;display:flex;align-items:center;gap:70px;padding:0 90px"><div style="flex:1">${head('A guide and help, built in', 'See how it works at a glance, and reach us by email or phone from the popup whenever you need a hand.')}</div>${popupCard(shots.popupHow, 640)}</body>`],
   'screenshot-5-two-ways-1280x800': [1280, 800, `<body class="bg" style="width:1280px;height:800px;padding:0 54px;display:flex;flex-direction:column;justify-content:center"><div class="serif" style="font-size:50px;font-weight:700;letter-spacing:-.03em;margin-bottom:26px">Two ways into Figma</div>${ways(0.72)}<div style="margin-top:26px;font-size:22px;opacity:.85;display:flex;gap:30px"><span>Help: ${CONTACT.email}</span><span>${CONTACT.phone}</span></div></body>`],
   'small-promo-tile-440x280': [440, 280, `<body class="bg" style="width:440px;height:280px;display:flex;flex-direction:column;justify-content:center;padding:0 34px;gap:14px">${brandRow(64, 44)}<div class="serif" style="font-size:25px;line-height:1.15;font-weight:700">Capture any website as editable Figma layers</div></body>`],
   'large-promo-tile-1400x560': [1400, 560, `<body class="bg" style="width:1400px;height:560px;display:flex;align-items:center;gap:60px;padding:0 90px"><div style="flex:1">${brandRow(84, 62)}<div class="serif" style="font-size:54px;line-height:1.05;font-weight:700;letter-spacing:-.03em;margin-top:26px">Any website to editable Figma layers</div><div style="display:flex;gap:12px;margin-top:28px;font-size:20px"><span class="chip">Free</span><span class="chip">Private</span><span class="chip">Responsive set</span></div></div><img class="dev" src="${shots.popupDone}" style="height:640px;margin-top:130px;border-radius:22px"></body>`],

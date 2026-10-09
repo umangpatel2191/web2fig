@@ -1,4 +1,3 @@
-import { logoSvg } from '../../../shared/brand';
 import { DEFAULT_CAPTURE_OPTIONS, type CaptureMode, type CaptureOptions, type CaptureSummary, type ScrollSpeed } from '../../../shared/messages';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -164,7 +163,16 @@ async function start(): Promise<void> {
 /* ------------------------------------------------------------------ */
 
 async function init(): Promise<void> {
-  $('mark').innerHTML = logoSvg(36);
+  $('mark').innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>';
+  document.querySelectorAll<HTMLElement>('.pk').forEach((k) => (k.textContent = isMac ? '⌘ V' : 'Ctrl+V'));
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) =>
+    b.addEventListener('click', () => {
+      void navigator.clipboard.writeText(b.dataset.copy ?? '').then(() => {
+        b.classList.add('ok');
+        setTimeout(() => b.classList.remove('ok'), 1400);
+      });
+    }),
+  );
   $('ver').textContent = `v${chrome.runtime.getManifest().version}`;
   $('pasteKey').textContent = isMac ? '⌘ V' : 'Ctrl+V';
   $('shortcut').textContent = isMac ? '⌥⇧C' : 'Alt+Shift+C';
