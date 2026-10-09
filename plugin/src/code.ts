@@ -1,7 +1,7 @@
 import { DEFAULT_IMPORT_OPTIONS, type ImportOptions, type MainToUi, type UiToMain } from '../../shared/messages';
 import { CancelledError, importCapture } from './core/builder';
 
-figma.showUI(__html__, { width: 400, height: 640, themeColors: true, title: 'Web2Fig' });
+figma.showUI(__html__, { width: 400, height: 720, themeColors: true, title: 'Web2Fig' });
 
 const post = (msg: MainToUi) => figma.ui.postMessage(msg);
 let cancelled = false;

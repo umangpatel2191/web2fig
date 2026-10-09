@@ -1,5 +1,5 @@
 import { DEFAULT_IMPORT_OPTIONS, type ImportOptions, type ImportResult, type MainToUi, type UiToMain } from '../../../shared/messages';
-import { BRAND, logoSvg } from '../../../shared/brand';
+import { BRAND } from '../../../shared/brand';
 /**
  * Build-time switch for the "From a link" tab + local helper (see scripts/build.mjs, WEB2FIG_LINK).
  * esbuild replaces it with a literal, so the store build contains none of the link-mode code.
@@ -207,8 +207,24 @@ const ICON_PASTE = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" 
 const ICON_IMAGE = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg>';
 const ICON_SHIELD = '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>';
 
+const ic = (paths: string, cls = 'i') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
+const ICON = {
+  code: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
+  desktop: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  tablet: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M11 18h2"/>',
+  mobile: '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/>',
+  all: '<rect x="3" y="8" width="12" height="13" rx="2"/><path d="M9 8V5a2 2 0 012-2h8a2 2 0 012 2v9a2 2 0 01-2 2h-3"/>',
+  scroll: '<path d="M12 5v14M8 9l4-4 4 4M8 15l4 4 4-4"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  chevron: '<path d="M6 9l6 6 6-6"/>',
+  link: '<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1"/>',
+  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  layers: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+} as const;
+
 const header = () =>
-  `<header class="top"><span class="mark">${logoSvg(32)}</span><div class="id"><b>${BRAND.name}</b><span class="t">${BRAND.tagline}</span></div><span class="pill">Plugin</span></header>`;
+  `<header class="top"><span class="mark">${ic(ICON.code, '')}</span><div class="id"><b>${BRAND.name}</b><span class="t">${BRAND.tagline}</span></div><span class="pill">Plugin</span></header>`;
 
 /** A screen = header + scrollable body + (optional) pinned action bar. */
 const screen = (body: string, actions = '', bodyClass = ''): string =>
@@ -242,24 +258,25 @@ function pastePanel(): string {
 
 function linkPanel(): string {
   const sizes: [SizeChoice, string][] = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['mobile', 'Mobile'], ['all', 'All 3 sizes']];
+  const sizeIcon: Record<SizeChoice, string> = { desktop: ICON.desktop, tablet: ICON.tablet, mobile: ICON.mobile, all: ICON.all };
   const idx = sizes.findIndex(([k]) => k === state.size);
   return `
     <div class="linkbox">
       <label class="lbl" for="url">Website address</label>
-      <input id="url" type="text" inputmode="url" placeholder="https://example.com" value="${esc(state.url)}" autocomplete="off" autocapitalize="off" spellcheck="false" />
-      <div class="lbl" style="margin-top:12px">Size</div>
+      <div class="field">${ic(ICON.link, '')}<input id="url" type="text" inputmode="url" placeholder="https://example.com" value="${esc(state.url)}" autocomplete="off" autocapitalize="off" spellcheck="false" /></div>
+      <div class="lbl" style="margin-top:18px">Size</div>
       <div class="seg4" id="sizeSeg" role="radiogroup" aria-label="Page size" data-i="${idx}">
         <span class="knob" aria-hidden="true"></span>
-        ${sizes.map(([k, label]) => `<button type="button" role="radio" data-size="${k}" aria-checked="${k === state.size}">${label}</button>`).join('')}
+        ${sizes.map(([k, label]) => `<button type="button" role="radio" data-size="${k}" aria-checked="${k === state.size}">${ic(sizeIcon[k])}<span>${label}</span></button>`).join('')}
       </div>
       <p class="hint">${state.size === 'all' ? `Desktop 1440 + tablet 768 + mobile 390, side by side.${__CLOUD__ ? ' Counts as 3 captures.' : ''}` : `Viewport width ${SIZE_PX[state.size as Exclude<SizeChoice, 'all'>]}px.`}</p>
-      <label class="opt flat"><span><b>Scroll the page first</b><i>Plays reveal animations, loads lazy images</i></span><input type="checkbox" id="optScroll" ${state.scroll ? 'checked' : ''} /><span class="switch"></span></label>
+      <label class="opt flat"><span class="tile">${ic(ICON.scroll, '')}</span><span class="txt"><b>Scroll the page first</b><i>Plays reveal animations, loads lazy images</i></span><input type="checkbox" id="optScroll" ${state.scroll ? 'checked' : ''} /><span class="switch"></span></label>
       ${state.notice ? `<div class="or bad" role="alert" style="margin:10px 0 0">${esc(state.notice)}</div>` : ''}
-      <button class="primary" id="fetchBtn" type="button" style="margin-top:12px">Fetch design</button>
+      <button class="primary" id="fetchBtn" type="button"><span>Fetch design</span>${ic(ICON.arrow, '')}</button>
       <div class="helper" id="helper" data-state="${state.helper}"><i></i><span id="helperText"></span><button class="link" id="recheck" type="button">Check again</button></div>
       <div class="hint" id="helperErr" style="word-break:break-word"></div>
-      ${__CLOUD__ ? `<details class="setup" id="setup"><summary>How link mode works</summary><p>Your link is opened by the Web2Fig server in a private browser. The page is turned into layers, sent back to this plugin and then discarded: nothing is stored. Pages that need a login, and sites that block servers, can't be captured this way: use the Web2Fig browser extension for those. To keep the free server fast, each visitor gets a limited number of captures per hour.</p></details>` : `<details class="setup" id="setup">
-        <summary>How to start the helper</summary>
+      ${__CLOUD__ ? `<details class="setup" id="setup"><summary>${ic(ICON.chevron, '')}<span>How link mode works</span></summary><p>Your link is opened by the Web2Fig server in a private browser. The page is turned into layers, sent back to this plugin and then discarded: nothing is stored. Pages that need a login, and sites that block servers, can't be captured this way: use the Web2Fig browser extension for those. To keep the free server fast, each visitor gets a limited number of captures per hour.</p></details>` : `<details class="setup" id="setup">
+        <summary>${ic(ICON.chevron, '')}<span>How to start the helper</span></summary>
         <ol>
           <li>Open the <b>helper</b> folder that came with the plugin.</li>
           <li>Double-click <b>Start Web2Fig Helper.bat</b> (Mac: <b>start-web2fig-helper.command</b>). The first run installs one small piece.</li>
@@ -283,10 +300,17 @@ function emptyScreen(): string {
   const link = __LINK_MODE__ && state.tab === 'link';
   return screen(`
     <div class="hero compact">
+      <svg class="deco" viewBox="0 0 190 150" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><circle cx="160" cy="96" r="92"/><circle cx="160" cy="96" r="58"/><path d="M160 0v150M40 96h150"/><circle cx="120" cy="40" r="3" fill="currentColor"/></svg>
       <h1>Turn any website into <em>editable Figma layers</em></h1>
+      <div class="rule"></div>
     </div>
     ${__LINK_MODE__ ? tabsMarkup(link) : ''}
     ${__LINK_MODE__ && link ? linkPanel() : pastePanel()}
+    <div class="feats">
+      <div class="feat">${ic(ICON.bolt, '')}<b>Fast &amp; Accurate</b><span>Reliable results</span></div>
+      <div class="feat">${ic(ICON.layers, '')}<b>Smart Layers</b><span>Clean &amp; organized</span></div>
+      <div class="feat">${ic(ICON.globe, '')}<b>Works Anywhere</b><span>Any public site</span></div>
+    </div>
     <div class="privacy">${ICON_SHIELD}<span>${__CLOUD__ && link ? 'Link mode opens the page on the Web2Fig server. Nothing is stored.' : 'Everything runs locally. Nothing leaves your computer.'}</span></div>`);
 }
 
@@ -294,7 +318,7 @@ function fetchingScreen(): string {
   return screen(
     `
     <div class="ring">
-      <svg viewBox="0 0 44 44"><defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b5cf6"/><stop offset="1" stop-color="#9b4df0"/></linearGradient></defs>
+      <svg viewBox="0 0 44 44"><defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a1e24"/><stop offset="1" stop-color="#b9505a"/></linearGradient></defs>
         <circle class="bg" cx="22" cy="22" r="18" pathLength="100"/><circle class="fg" id="fRingFg" cx="22" cy="22" r="18" pathLength="100" style="stroke:url(#g2);stroke-dashoffset:98"/></svg>
       <div class="pct" id="fPct">2%</div>
     </div>
@@ -342,7 +366,7 @@ function importingScreen(): string {
   return screen(
     `
     <div class="ring">
-      <svg viewBox="0 0 44 44"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b5cf6"/><stop offset="1" stop-color="#9b4df0"/></linearGradient></defs>
+      <svg viewBox="0 0 44 44"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a1e24"/><stop offset="1" stop-color="#b9505a"/></linearGradient></defs>
         <circle class="bg" cx="22" cy="22" r="18" pathLength="100"/><circle class="fg" id="ringFg" cx="22" cy="22" r="18" pathLength="100"/></svg>
       <div class="pct" id="pct">0%</div>
     </div>
