@@ -1,5 +1,5 @@
-// Dependency-free PNG icon generator. Draws the same mark as shared/brand.ts (gradient tile, four frame corners,
-// two stacked layers) on a 64×64 grid with 4×4 supersampling.
+// Dependency-free PNG icon generator. Draws the same mark as shared/brand.ts (cream tile, four maroon frame corners and a
+// `</>` glyph) on a 64×64 grid with 4×4 supersampling.
 import { deflateSync } from 'node:zlib';
 
 const crcTable = new Uint32Array(256).map((_, n) => {
@@ -55,6 +55,14 @@ const BRACKETS = [
   bracket([17, 47, 1, -1], 10, 4),
 ];
 const STROKE = 2.2;
+// the `</>` glyph (polylines) in the middle of the frame, plus its coral slash
+const GLYPH = [[[27.5, 26], [21.5, 32], [27.5, 38]], [[36.5, 26], [42.5, 32], [36.5, 38]]];
+const SLASH = [[34, 24], [30, 40]];
+const GLYPH_STROKE = 1.6;
+function nearPoly(x, y, pts, w) {
+  for (let i = 1; i < pts.length; i++) if (segDist(x, y, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]) <= w) return true;
+  return false;
+}
 
 function inBrackets(x, y) {
   for (const pts of BRACKETS) {
@@ -77,16 +85,13 @@ export function png(size) {
           const x = ((px + (sx + 0.5) / SS) / size) * 64;
           const y = ((py + (sy + 0.5) / SS) / size) * 64;
           if (!roundedRect(x, y, 0, 0, 64, 64, 15)) continue;
-          // diagonal brand gradient #5B5CF6 → #9B4DF0 + a soft top highlight
+          // diagonal cream gradient #FFF9F0 → #EFDFC8 + a soft top highlight
           const t = Math.max(0, Math.min(1, ((x - 6) * 52 + (y - 4) * 56) / (52 * 52 + 56 * 56)));
-          let cr = mix(0x5b, 0x9b, t), cg = mix(0x5c, 0x4d, t), cb = mix(0xf6, 0xf0, t);
-          const hl = Math.max(0, 1 - y / 40) * 0.28;
+          let cr = mix(0xff, 0xef, t), cg = mix(0xf9, 0xdf, t), cb = mix(0xf0, 0xc8, t);
+          const hl = Math.max(0, 1 - y / 40) * 0.5;
           cr = mix(cr, 255, hl); cg = mix(cg, 255, hl); cb = mix(cb, 255, hl);
-          let white = 0;
-          if (inBrackets(x, y)) white = 1;
-          if (roundedRect(x, y, 29.5, 29.5, 14, 14, 3.4)) white = 1;
-          else if (roundedRect(x, y, 25.5, 25.5, 14, 14, 3.4)) white = Math.max(white, 0.5);
-          cr = mix(cr, 255, white); cg = mix(cg, 255, white); cb = mix(cb, 255, white);
+          if (inBrackets(x, y) || GLYPH.some((p) => nearPoly(x, y, p, GLYPH_STROKE))) { cr = 0x5a; cg = 0x1e; cb = 0x24; }
+          else if (nearPoly(x, y, SLASH, GLYPH_STROKE)) { cr = 0xc9; cg = 0x52; cb = 0x4a; }
           r += cr; g += cg; b += cb; a += 255;
         }
       }

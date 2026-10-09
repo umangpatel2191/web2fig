@@ -10,9 +10,9 @@ export function pickElement(): Promise<Element | null> {
     const shadow = host.attachShadow({ mode: 'closed' });
     shadow.innerHTML = `
       <style>
-        .box{position:fixed;pointer-events:none;border:2px solid #5b5cf6;background:rgba(91,92,246,.12);border-radius:4px;box-shadow:0 0 0 1px rgba(255,255,255,.5);
+        .box{position:fixed;pointer-events:none;border:2px solid #7c2b33;background:rgba(124,43,51,.12);border-radius:4px;box-shadow:0 0 0 1px rgba(255,255,255,.5);
              transition:all 60ms ease-out;box-sizing:border-box}
-        .tag{position:fixed;pointer-events:none;font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#fff;background:linear-gradient(135deg,#5b5cf6,#9b4df0);
+        .tag{position:fixed;pointer-events:none;font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#fff;background:linear-gradient(135deg,#7c2b33,#b9505a);
              padding:4px 7px;border-radius:5px;white-space:nowrap;box-shadow:0 4px 12px rgba(91,92,246,.4)}
         .hint{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;gap:10px;align-items:center;
               font:500 13px/1 "Inter",system-ui,-apple-system,Segoe UI,sans-serif;color:#fff;background:rgba(17,17,24,.94);
