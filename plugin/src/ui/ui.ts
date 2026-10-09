@@ -1,5 +1,5 @@
 import { DEFAULT_IMPORT_OPTIONS, type ImportOptions, type ImportResult, type MainToUi, type UiToMain } from '../../../shared/messages';
-import { BRAND } from '../../../shared/brand';
+import { BRAND, CONTACT } from '../../../shared/brand';
 /**
  * Build-time switch for the "From a link" tab + local helper (see scripts/build.mjs, WEB2FIG_LINK).
  * esbuild replaces it with a literal, so the store build contains none of the link-mode code.
@@ -220,6 +220,11 @@ const ICON = {
   link: '<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1"/>',
   bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
   layers: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/>',
+  puzzle: '<path d="M10 4a2 2 0 114 0v1h3a1 1 0 011 1v3h1a2 2 0 110 4h-1v3a1 1 0 01-1 1h-3v-1a2 2 0 10-4 0v1H7a1 1 0 01-1-1v-3H5a2 2 0 110-4h1V6a1 1 0 011-1h3z"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>',
+  external: '<path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h4"/>',
   globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
 } as const;
 
@@ -249,11 +254,7 @@ function pastePanel(): string {
       <input type="file" id="file" accept=".json,application/json" hidden />
       <textarea id="sink" aria-label="Paste target" tabindex="-1" spellcheck="false"></textarea>
     </div>
-    <ol class="steps">
-      <li><span class="n">1</span><div><b>Capture a page</b><span>Click the ${BRAND.name} icon in Edge.</span></div></li>
-      <li><span class="n">2</span><div><b>It copies itself</b><span>Nothing to download. It is on your clipboard.</span></div></li>
-      <li><span class="n">3</span><div><b>Paste here</b><span>Review, then import into your file.</span></div></li>
-    </ol>`;
+    `;
 }
 
 function linkPanel(): string {
@@ -275,7 +276,7 @@ function linkPanel(): string {
       <button class="primary" id="fetchBtn" type="button"><span>Fetch design</span>${ic(ICON.arrow, '')}</button>
       <div class="helper" id="helper" data-state="${state.helper}"><i></i><span id="helperText"></span><button class="link" id="recheck" type="button">Check again</button></div>
       <div class="hint" id="helperErr" style="word-break:break-word"></div>
-      ${__CLOUD__ ? `<details class="setup" id="setup"><summary>${ic(ICON.chevron, '')}<span>How link mode works</span></summary><p>Your link is opened by the Web2Fig server in a private browser. The page is turned into layers, sent back to this plugin and then discarded: nothing is stored. Pages that need a login, and sites that block servers, can't be captured this way: use the Web2Fig browser extension for those. To keep the free server fast, each visitor gets a limited number of captures per hour.</p></details>` : `<details class="setup" id="setup">
+      ${__CLOUD__ ? `<details class="setup" id="setup"><summary>${ic(ICON.chevron, '')}<span>Privacy &amp; limits of link mode</span></summary><p>Your link is opened by the Web2Fig server in a private browser. The page is turned into layers, sent back to this plugin and then discarded: nothing is stored. Pages that need a login, and sites that block servers, can't be captured this way: use the Web2Fig browser extension for those. To keep the free server fast, each visitor gets a limited number of captures per hour.</p></details>` : `<details class="setup" id="setup">
         <summary>${ic(ICON.chevron, '')}<span>How to start the helper</span></summary>
         <ol>
           <li>Open the <b>helper</b> folder that came with the plugin.</li>
@@ -296,6 +297,35 @@ function tabsMarkup(link: boolean): string {
     </div>`;
 }
 
+/** A small left-to-right diagram of what happens, then the steps. Each tab explains only its own way in. */
+function howItWorks(link: boolean): string {
+  const node = (icon: string, title: string, sub: string) => `<div class="node"><span class="tile">${ic(icon, '')}</span><b>${title}</b><i>${sub}</i></div>`;
+  const arrow = `<span class="arr">${ic(ICON.arrow, '')}</span>`;
+  const steps = (list: string[]) => `<ol class="st">${list.map((t, i) => `<li><span class="n">${i + 1}</span><span>${t}</span></li>`).join('')}</ol>`;
+  if (link)
+    return `<div class="sect">How it works</div><div class="way">
+      <div class="flow">${node(ICON.link, 'Your link', 'Paste an address')}${arrow}${node(ICON.globe, 'Web2Fig', 'Opens &amp; converts')}${arrow}${node(ICON.layers, 'Figma', 'Editable layers')}</div>
+      ${steps(['Type a website address above.', 'Pick Desktop, Tablet, Mobile or all three sizes.', 'Press <b>Fetch design</b>, check the preview, then <b>Import</b>.'])}
+      <p class="alt">Page behind a login, or a site that blocks servers? <button class="link" type="button" data-goto="paste">Use the Edge extension</button> instead.</p></div>`;
+  return `<div class="sect">How it works</div><div class="way">
+      <div class="flow">${node(ICON.puzzle, 'Edge', 'Click Web2Fig')}${arrow}${node(ICON.copy, 'Clipboard', 'JSON copied')}${arrow}${node(ICON.layers, 'Figma', 'Paste here')}</div>
+      ${steps(['Install <b>Web2Fig</b> for Microsoft Edge (button below). It is free.', 'Open any page, even one behind a login, and click the extension. The capture is copied for you.', `Come back here and press <b>${MOD}+V</b>, or drop the <b>.json</b> file. Then <b>Import</b>.`])}</div>`;
+}
+
+function edgeCta(): string {
+  return `<a class="cta" href="${CONTACT.edgeUrl}" target="_blank" rel="noopener noreferrer"><span class="tile">${ic(ICON.puzzle, '')}</span><span class="txt"><b>Get Web2Fig for Microsoft Edge</b><i>Free browser extension for the paste flow</i></span>${ic(ICON.external, '')}</a>`;
+}
+
+function helpCard(): string {
+  const row = (icon: string, label: string, value: string, href: string) =>
+    `<div class="hrow"><span class="tile">${ic(icon, '')}</span><span class="txt"><i>${label}</i><a href="${href}" target="_blank" rel="noopener noreferrer">${value}</a></span><button class="cp" type="button" data-copy="${value}" aria-label="Copy ${label}">${ic(ICON.copy, '')}</button></div>`;
+  return `<div class="sect">Help &amp; contact</div>
+    <div class="help"><p>Stuck, found a bug or have an idea? Get in touch, we read every message.</p>
+      ${row(ICON.mail, 'Email', CONTACT.email, 'mailto:' + CONTACT.email)}
+      ${row(ICON.phone, 'Phone', CONTACT.phone, 'tel:' + CONTACT.phone)}
+    </div>`;
+}
+
 function emptyScreen(): string {
   const link = __LINK_MODE__ && state.tab === 'link';
   return screen(`
@@ -306,6 +336,9 @@ function emptyScreen(): string {
     </div>
     ${__LINK_MODE__ ? tabsMarkup(link) : ''}
     ${__LINK_MODE__ && link ? linkPanel() : pastePanel()}
+    ${howItWorks(link)}
+    ${link ? '' : edgeCta()}
+    ${helpCard()}
     <div class="feats">
       <div class="feat">${ic(ICON.bolt, '')}<b>Fast &amp; Accurate</b><span>Reliable results</span></div>
       <div class="feat">${ic(ICON.layers, '')}<b>Smart Layers</b><span>Clean &amp; organized</span></div>
@@ -441,6 +474,38 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 function bind(): void {
   switch (state.screen) {
     case 'empty': {
+      document.querySelectorAll<HTMLButtonElement>('[data-goto]').forEach((b) =>
+        b.addEventListener('click', () => {
+          state.tab = b.dataset.goto as Tab;
+          state.notice = '';
+          go('empty');
+        }),
+      );
+      document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) =>
+        b.addEventListener('click', () => {
+          const text = b.dataset.copy ?? '';
+          const done = () => {
+            b.classList.add('ok');
+            setTimeout(() => b.classList.remove('ok'), 1400);
+          };
+          const fallback = () => {
+            const t = document.createElement('textarea');
+            t.value = text;
+            t.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(t);
+            t.select();
+            try {
+              document.execCommand('copy');
+              done();
+            } catch {
+              /* nothing more to try */
+            }
+            t.remove();
+          };
+          if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+          else fallback();
+        }),
+      );
       document.querySelectorAll<HTMLButtonElement>('#tabs [data-tab]').forEach((b) =>
         b.addEventListener('click', () => {
           state.tab = b.dataset.tab as Tab;

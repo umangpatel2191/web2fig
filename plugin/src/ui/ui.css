@@ -42,7 +42,9 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
 #app { height: 100%; }
 .screen { height: 100%; display: flex; flex-direction: column; animation: rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px 18px; scrollbar-width: thin; scrollbar-color: var(--bg-3) transparent; }
+/* thin scrollbar in the page colours; the gutter is reserved on both sides so content stays centred whether or not it scrolls */
+.body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 18px; scrollbar-width: thin; scrollbar-color: #cdbca3 transparent; scrollbar-gutter: stable both-edges; }
+@supports selector(::-webkit-scrollbar) { .body::-webkit-scrollbar { width: 8px; } .body::-webkit-scrollbar-track { background: transparent; } .body::-webkit-scrollbar-thumb { background: #cdbca3; border-radius: 8px; border: 2px solid transparent; background-clip: content-box; } .body::-webkit-scrollbar-thumb:hover { background: var(--brand-2); background-clip: content-box; } }
 .body.center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; }
 .actions { flex: none; display: grid; gap: 8px; padding: 12px 20px 18px; border-top: 1px solid var(--border); background: var(--bg); }
 
@@ -228,5 +230,38 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
 .setup li { margin-bottom: 5px; }
 .setup p { margin: 0; padding: 0 14px 12px; }
 .setup b { color: var(--text); }
+
+/* ---------- how it works / extension / help ---------- */
+.way { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 16px 14px 14px; }
+.flow { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; margin-bottom: 14px; }
+.node { flex: 1; min-width: 0; text-align: center; }
+.node .tile { width: 42px; height: 42px; margin: 0 auto 7px; border-radius: 13px; display: grid; place-items: center; color: var(--brand-ink); background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: 0 6px 14px rgba(90, 30, 36, 0.25); }
+.node .tile svg, .tile svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.node b { display: block; font-size: 12px; font-weight: 700; }
+.node i { display: block; font-style: normal; color: var(--text-2); font-size: 10.5px; line-height: 1.3; }
+.arr { flex: none; margin-top: 12px; color: var(--accent); }
+.arr svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.st { list-style: none; margin: 0; padding: 12px 0 0; border-top: 1px dashed var(--border); display: grid; gap: 10px; }
+.st li { display: flex; gap: 10px; align-items: flex-start; font-size: 12px; line-height: 1.45; }
+.st .n { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 10.5px; font-weight: 720; color: var(--brand-ink); background: var(--brand); margin-top: 1px; }
+.st b { font-weight: 700; }
+.alt { margin-top: 12px; padding-top: 11px; border-top: 1px dashed var(--border); color: var(--text-2); font-size: 11.5px; line-height: 1.5; }
+.cta { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 12px; text-decoration: none; color: var(--text); background: var(--card); border: 1.5px solid var(--brand); transition: background 0.15s, transform 0.15s; }
+.cta:hover { background: var(--bg-2); transform: translateY(-1px); }
+.cta .tile, .hrow .tile { flex: none; width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; color: var(--brand); background: var(--bg-2); border: 1px solid var(--border); }
+.cta .txt, .hrow .txt { flex: 1; min-width: 0; }
+.cta b { display: block; font-size: 12.5px; font-weight: 700; }
+.cta i, .hrow i { display: block; font-style: normal; color: var(--text-2); font-size: 11px; }
+.cta > svg { flex: none; width: 16px; height: 16px; color: var(--brand); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.help { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 14px; }
+.help p { color: var(--text-2); font-size: 11.5px; margin-bottom: 10px; }
+.hrow { display: flex; align-items: center; gap: 12px; }
+.hrow + .hrow { margin-top: 10px; }
+.hrow a { display: block; color: var(--text); font-weight: 650; font-size: 12.5px; text-decoration: none; word-break: break-all; }
+.hrow a:hover { color: var(--brand-2); text-decoration: underline; text-underline-offset: 3px; }
+.cp { flex: none; width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg); color: var(--text-2); display: grid; place-items: center; transition: background 0.12s, color 0.12s; }
+.cp:hover { background: var(--bg-2); color: var(--brand); }
+.cp svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cp.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } .check svg, .badge-ok svg { stroke-dashoffset: 0 !important; } }

@@ -37,3 +37,10 @@ export function logoSvg(size = 32): string {
     `</svg>`
   );
 }
+
+/** Where people go for the extension and for help. Shown in the plugin, the popup and the store artwork. */
+export const CONTACT = {
+  email: 'umangp737@gmail.com',
+  phone: '7600363306',
+  edgeUrl: 'https://microsoftedge.microsoft.com/addons/detail/web2fig-%E2%80%94-website-to-figm/ofomamonipegnofpcemkadghleapoccd',
+} as const;

@@ -20,7 +20,7 @@ if (!chromePath) throw new Error('Chrome or Edge not found. Set CHROME_PATH.');
 
 /* the brand mark, straight from shared/brand.ts so artwork and product never drift apart */
 const brandJs = esbuild.transformSync(fs.readFileSync(path.join(root, 'shared/brand.ts'), 'utf8'), { loader: 'ts', format: 'esm' }).code;
-const { logoSvg } = await import('data:text/javascript;base64,' + Buffer.from(brandJs).toString('base64'));
+const { logoSvg, CONTACT } = await import('data:text/javascript;base64,' + Buffer.from(brandJs).toString('base64'));
 
 /* tiny static server for the built popup (/ext) and plugin (/plug) */
 const server = http.createServer((q, r) => {
@@ -76,6 +76,19 @@ async function shotPlugin(state) {
   });
   await p.goto('http://localhost:5893/plug', { waitUntil: 'load' });
   await sleep(1200);
+  if (state === 'paste-how' || state === 'link-how') {
+    if (state === 'paste-how') await p.evaluate(() => document.querySelector('[data-tab="paste"]').click());
+    await sleep(900);
+    await p.evaluate(() => {
+      const el = [...document.querySelectorAll('.sect')].find((e) => /how it works/i.test(e.textContent));
+      const body = document.querySelector('.body');
+      body.scrollTop += el.getBoundingClientRect().top - body.getBoundingClientRect().top - 8;
+    });
+    await sleep(300);
+    const buf2 = await p.screenshot({ type: 'png' });
+    await p.close();
+    return 'data:image/png;base64,' + buf2.toString('base64');
+  }
   if (state === 'done')
     await p.evaluate(() => window.postMessage({ pluginMessage: { type: 'done', result: { layers: 1284, autoLayouts: 96, autoLayoutCandidates: 118, variables: 14, ms: 4200, substitutions: [], warnings: [], imagesFailed: 0 } } }, '*'));
   await sleep(900);
@@ -85,7 +98,7 @@ async function shotPlugin(state) {
   return 'data:image/png;base64,' + buf.toString('base64');
 }
 
-const shots = { popupIdle: await shotPopup('idle'), popupBusy: await shotPopup('busy'), popupDone: await shotPopup('done'), plugin: await shotPlugin('link'), pluginDone: await shotPlugin('done') };
+const shots = { popupIdle: await shotPopup('idle'), popupBusy: await shotPopup('busy'), popupDone: await shotPopup('done'), plugin: await shotPlugin('link'), pluginDone: await shotPlugin('done'), pasteHow: await shotPlugin('paste-how'), linkHow: await shotPlugin('link-how') };
 
 /* ---------- poster pieces ---------- */
 const BASE = `*{box-sizing:border-box;margin:0}body{font-family:"Segoe UI",Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff4e6;overflow:hidden}
@@ -96,6 +109,7 @@ const BASE = `*{box-sizing:border-box;margin:0}body{font-family:"Segoe UI",Inter
 .dev{border-radius:26px;box-shadow:0 40px 90px rgba(10,0,0,.55),0 0 0 1px rgba(255,244,230,.16);display:block}
 .card{background:rgba(255,244,230,.07);border:1px solid rgba(255,244,230,.18);border-radius:28px}
 .ico{width:64px;height:64px;border-radius:18px;background:rgba(255,244,230,.12);display:grid;place-items:center;color:#f0877f}
+.nd{background:#fff4e6;color:#5a1e24;display:grid;place-items:center;box-shadow:0 14px 30px rgba(10,0,0,.35)}.nd svg{width:52%;height:52%;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .ico svg{width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}`;
 const svg = (p) => `<svg viewBox="0 0 24 24">${p}</svg>`;
 const I = {
@@ -107,26 +121,38 @@ const I = {
   link: svg('<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1"/>'),
   lock: svg('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>'),
   cam: svg('<rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>'),
+  puzzle: svg('<path d="M10 4a2 2 0 114 0v1h3a1 1 0 011 1v3h1a2 2 0 110 4h-1v3a1 1 0 01-1 1h-3v-1a2 2 0 10-4 0v1H7a1 1 0 01-1-1v-3H5a2 2 0 110-4h1V6a1 1 0 011-1h3z"/>'),
+  globe: svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'),
+  mail: svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>'),
+  phone: svg('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/>'),
   copy: svg('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>'),
 };
 const card = (i, t, d, h = 300) => `<div class="card" style="padding:34px;min-height:${h}px"><div class="ico">${I[i]}</div><div class="serif" style="font-size:38px;font-weight:700;margin:22px 0 10px">${t}</div><div style="font-size:23px;line-height:1.45;opacity:.9">${d}</div></div>`;
 const step = (n, t, d) => `<div class="card" style="flex:1;padding:38px;min-height:430px"><div class="ico" style="font:700 34px 'Palatino Linotype',Georgia,serif;color:#fff4e6">${n}</div><div class="serif" style="font-size:42px;font-weight:700;margin:26px 0 12px">${t}</div><div style="font-size:24px;line-height:1.45;opacity:.9">${d}</div></div>`;
 const brandRow = (s, name = 84) => `<div style="display:flex;align-items:center;gap:${Math.round(s / 4)}px"><div style="filter:drop-shadow(0 14px 28px rgba(0,0,0,.45))">${logoSvg(s)}</div><b class="serif" style="font-size:${name}px;letter-spacing:-.02em">Web2Fig</b></div>`;
 
+const node = (k, icon, t, sub) => `<div style="text-align:center;flex:1"><div class="nd" style="width:${88 * k}px;height:${88 * k}px;border-radius:${24 * k}px;margin:0 auto ${12 * k}px">${I[icon]}</div><b style="font-size:${25 * k}px">${t}</b><div style="font-size:${19 * k}px;opacity:.75;margin-top:2px">${sub}</div></div>`;
+const arr = (k) => `<div style="width:${40 * k}px;height:${40 * k}px;color:#f0877f;margin-top:${24 * k}px;flex:none"><svg viewBox="0 0 24 24" style="width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>`;
+const wayCard = (k, tag, title, nodes, steps) => `<div class="card" style="flex:1;padding:${40 * k}px">
+  <span class="chip" style="font-size:${20 * k}px;padding:${8 * k}px ${18 * k}px">${tag}</span>
+  <div class="serif" style="font-size:${48 * k}px;font-weight:700;letter-spacing:-.02em;margin:${18 * k}px 0 ${28 * k}px;line-height:1.05">${title}</div>
+  <div style="display:flex;align-items:flex-start;gap:${6 * k}px">${nodes}</div>
+  <div style="margin-top:${30 * k}px;display:grid;gap:${14 * k}px;border-top:1px dashed rgba(255,244,230,.25);padding-top:${26 * k}px">${steps.map((t, i) => `<div style="display:flex;gap:${14 * k}px;font-size:${23 * k}px;line-height:1.4"><span style="flex:none;width:${34 * k}px;height:${34 * k}px;border-radius:50%;background:#fff4e6;color:#5a1e24;font-weight:800;display:grid;place-items:center;font-size:${19 * k}px">${i + 1}</span><span>${t}</span></div>`).join('')}</div></div>`;
+const ways = (k) => `<div style="display:flex;gap:${34 * k}px">
+  ${wayCard(k, 'Direct', 'Paste a link', node(k, 'link', 'Your link', 'Paste an address') + arr(k) + node(k, 'globe', 'Web2Fig', 'Opens &amp; converts') + arr(k) + node(k, 'layers', 'Figma', 'Editable layers'), ['Type a website address in the plugin.', 'Pick Desktop, Tablet, Mobile or all three.', 'Fetch, review, then Import.'])}
+  ${wayCard(k, 'With the Edge extension', 'Paste a capture', node(k, 'puzzle', 'Edge', 'Click Web2Fig') + arr(k) + node(k, 'copy', 'Clipboard', 'JSON copied') + arr(k) + node(k, 'layers', 'Figma', 'Paste here'), ['Install the free extension from Microsoft Edge Add-ons.', 'Open any page, even behind a login, and click it.', 'Press Ctrl+V in the plugin, then Import.'])}
+</div>`;
+const contactCard = (k, icon, label, value) => `<div class="card" style="display:flex;align-items:center;gap:${22 * k}px;padding:${26 * k}px ${30 * k}px"><div class="nd" style="width:${72 * k}px;height:${72 * k}px;border-radius:${20 * k}px;flex:none">${I[icon]}</div><div><div style="font-size:${20 * k}px;opacity:.7;letter-spacing:.08em;text-transform:uppercase">${label}</div><div class="serif" style="font-size:${40 * k}px;font-weight:700;margin-top:4px">${value}</div></div></div>`;
+
 const FIGMA = {
   'cover-1920x1080': [1920, 1080, `<body class="bg" style="width:1920px;height:1080px;display:flex;align-items:center;gap:90px;padding:0 150px">
     <div style="flex:1">${brandRow(120)}
       <div class="serif" style="font-size:88px;line-height:1.04;font-weight:700;letter-spacing:-.03em;margin-top:44px">Turn any website into editable Figma layers</div>
-      <div style="display:flex;gap:16px;margin-top:48px;font-size:23px"><span class="chip">Paste a link</span><span class="chip">Auto Layout</span><span class="chip">Responsive set</span></div></div>
+      <div style="display:flex;gap:16px;margin-top:48px;font-size:23px"><span class="chip">Paste a link</span><span class="chip">Edge extension</span><span class="chip">Auto Layout</span><span class="chip">Responsive set</span></div></div>
     <img class="dev" src="${shots.plugin}" style="height:880px;margin-right:30px"></body>`],
-  'how-it-works-1920x1080': [1920, 1080, `<body class="bg" style="width:1920px;height:1080px;padding:0 120px;display:flex;flex-direction:column;justify-content:center">
-    <div class="serif" style="font-size:78px;font-weight:700;letter-spacing:-.03em;margin-bottom:54px">Three steps, no screenshots</div>
-    <div style="display:flex;gap:34px">
-      ${step('1', 'Paste a link', 'Type a web address in the plugin and pick Desktop, Tablet, Mobile or all three sizes.')}
-      ${step('2', 'Review', 'Preview the page, then choose Auto Layout, text styles and colour variables.')}
-      ${step('3', 'Import', 'Real frames, text, images and Auto Layout land on your canvas, named and ready to edit.')}
-    </div>
-    <div style="margin-top:46px;font-size:26px;opacity:.9">No link, or the page needs a login? Capture it with the free Web2Fig Edge extension and paste it here instead.</div></body>`],
+  'how-it-works-1920x1080': [1920, 1080, `<body class="bg" style="width:1920px;height:1080px;padding:0 100px;display:flex;flex-direction:column;justify-content:center">
+    <div class="serif" style="font-size:72px;font-weight:700;letter-spacing:-.03em;margin-bottom:40px">Two ways to bring a site into Figma</div>
+    ${ways(1)}</body>`],
   'features-1920x1080': [1920, 1080, `<body class="bg" style="width:1920px;height:1080px;padding:92px 120px">
     <div class="serif" style="font-size:78px;font-weight:700;letter-spacing:-.03em;margin-bottom:46px">Real layers, not a screenshot</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:28px">
@@ -139,14 +165,22 @@ const FIGMA = {
     </div></body>`],
 };
 
+FIGMA['help-1920x1080'] = [1920, 1080, `<body class="bg" style="width:1920px;height:1080px;display:flex;align-items:center;gap:90px;padding:0 140px">
+  <div style="flex:1">${brandRow(88, 64)}
+    <div class="serif" style="font-size:78px;line-height:1.04;font-weight:700;letter-spacing:-.03em;margin:40px 0 34px">Need a hand? Just ask.</div>
+    <div style="display:grid;gap:20px">${contactCard(1, 'mail', 'Email', CONTACT.email)}${contactCard(1, 'phone', 'Phone', CONTACT.phone)}${contactCard(1, 'puzzle', 'Edge extension', 'Web2Fig on Microsoft Edge Add-ons')}</div>
+    <div style="margin-top:30px;font-size:25px;opacity:.85">Free to use. We read every message.</div></div>
+  <img class="dev" src="${shots.pasteHow}" style="height:900px"></body>`];
+
 const popupCard = (img, h) => `<img class="dev" src="${img}" style="height:${h}px;border-radius:22px">`;
 const head = (t, d) => `<div class="serif" style="font-size:66px;line-height:1.05;font-weight:700;letter-spacing:-.03em">${t}</div><div style="font-size:26px;line-height:1.45;opacity:.9;margin-top:22px;max-width:640px">${d}</div>`;
 const EDGE = {
   'screenshot-1-capture-1280x800': [1280, 800, `<body class="bg" style="width:1280px;height:800px;display:flex;align-items:center;gap:70px;padding:0 90px"><div style="flex:1">${head('Capture any page in one click', 'Full page, the visible area, or one element. Scrolls the whole page first so animations and lazy images are included.')}</div>${popupCard(shots.popupIdle, 640)}</body>`],
   'screenshot-2-capturing-1280x800': [1280, 800, `<body class="bg" style="width:1280px;height:800px;display:flex;align-items:center;gap:70px;padding:0 90px"><div style="flex:1">${head('Slow, careful, complete', 'Scrolls at a steady pace, loads images and backgrounds, and shows exactly what it is doing.')}</div>${popupCard(shots.popupBusy, 640)}</body>`],
-  'screenshot-3-ready-to-paste-1280x800': [1280, 800, `<body class="bg" style="width:1280px;height:800px;display:flex;align-items:center;gap:70px;padding:0 90px"><div style="flex:1">${head('Copied. Now paste into Figma', 'The capture is already on your clipboard. Open the Web2Fig plugin in Figma and press Ctrl+V.')}</div>${popupCard(shots.popupDone, 640)}</body>`],
+  'screenshot-3-ready-to-paste-1280x800': [1280, 800, `<body class="bg" style="width:1280px;height:800px;display:flex;align-items:center;gap:70px;padding:0 90px"><div style="flex:1">${head('Copied. Now paste into Figma', 'The capture is already on your clipboard. Open the Web2Fig plugin in Figma and press Ctrl+V, or skip the extension and paste a link in the plugin instead.')}</div>${popupCard(shots.popupDone, 640)}</body>`],
   'screenshot-4-features-1280x800': [1280, 800, `<body class="bg" style="width:1280px;height:800px;padding:70px 80px"><div class="serif" style="font-size:56px;font-weight:700;letter-spacing:-.03em;margin-bottom:34px">Everything on your computer</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px">${[['cam', 'Real layers', 'Text, images, SVG and shapes, not a flat screenshot.'], ['grid', 'Auto Layout ready', 'Structure the plugin turns into Auto Layout.'], ['resp', 'Responsive set', 'Desktop, tablet and mobile in one go.'], ['copy', 'Copy or download', 'Straight to the clipboard, or save a .json.'], ['lock', 'Private', 'No servers, no account, no tracking.'], ['layers', 'Free', 'No limits, no sign-up.']].map(([i, t, d]) => `<div class="card" style="padding:26px;min-height:240px"><div class="ico" style="width:52px;height:52px;border-radius:15px">${I[i]}</div><div class="serif" style="font-size:30px;font-weight:700;margin:16px 0 8px">${t}</div><div style="font-size:19px;line-height:1.4;opacity:.9">${d}</div></div>`).join('')}</div></body>`],
+  'screenshot-5-two-ways-1280x800': [1280, 800, `<body class="bg" style="width:1280px;height:800px;padding:0 54px;display:flex;flex-direction:column;justify-content:center"><div class="serif" style="font-size:50px;font-weight:700;letter-spacing:-.03em;margin-bottom:26px">Two ways into Figma</div>${ways(0.72)}<div style="margin-top:26px;font-size:22px;opacity:.85;display:flex;gap:30px"><span>Help: ${CONTACT.email}</span><span>${CONTACT.phone}</span></div></body>`],
   'small-promo-tile-440x280': [440, 280, `<body class="bg" style="width:440px;height:280px;display:flex;flex-direction:column;justify-content:center;padding:0 34px;gap:14px">${brandRow(64, 44)}<div class="serif" style="font-size:25px;line-height:1.15;font-weight:700">Capture any website as editable Figma layers</div></body>`],
   'large-promo-tile-1400x560': [1400, 560, `<body class="bg" style="width:1400px;height:560px;display:flex;align-items:center;gap:60px;padding:0 90px"><div style="flex:1">${brandRow(84, 62)}<div class="serif" style="font-size:54px;line-height:1.05;font-weight:700;letter-spacing:-.03em;margin-top:26px">Any website to editable Figma layers</div><div style="display:flex;gap:12px;margin-top:28px;font-size:20px"><span class="chip">Free</span><span class="chip">Private</span><span class="chip">Responsive set</span></div></div><img class="dev" src="${shots.popupDone}" style="height:640px;margin-top:130px;border-radius:22px"></body>`],
 };
