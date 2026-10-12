@@ -1,14 +1,28 @@
 # Web2Fig — Website to Figma
 
-Capture any website as **real, editable Figma layers** (frames, text, images, SVG, gradients, shadows,
-Auto Layout, color variables), not a flat screenshot. Also known as: web to Figma, HTML to Figma, website to Figma, URL to Figma.
+**Web2Fig is a free Figma plugin and Microsoft Edge extension that converts a website into real, editable Figma layers**
+(frames, text, images, SVG icons, gradients, masks, shadows, Auto Layout, text styles and color variables) instead of a flat screenshot.
+Also searched as: web to Figma, HTML to Figma, website to Figma, URL to Figma, import website into Figma.
 
-Two parts, both free to run locally:
+Built for designers who generate websites with AI (or receive them from developers) and want to refine them in Figma without rebuilding every section by hand.
+
+## Two ways to import a website into Figma
+
+1. **Paste a link.** Open the Web2Fig plugin in Figma, paste a website address, choose Desktop, Tablet, Mobile or all three sizes, press **Fetch design**, then **Import**. Works for public pages. The page is scrolled first so reveal animations and lazy images are included.
+2. **Capture with the Edge extension.** Click the extension on any page, including pages behind a login, then press `Ctrl+V` (`⌘V` on Mac) in the plugin's **Paste capture** tab.
+
+## Get it
+
+- **Microsoft Edge extension:** [Web2Fig — Website to Figma on Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/web2fig-%E2%80%94-website-to-figm/ofomamonipegnofpcemkadghleapoccd)
+- **Figma plugin:** search for **Web2Fig — Website to Figma** in Figma's Plugins (Community listing in review). Until then, build it from source below.
+- **Help:** umangp737@gmail.com
+
+Two parts, both free:
 
 | Part | What it does | Where |
 |---|---|---|
-| **Web2Fig Capture** (Chrome extension) | Reads the live page (positions, computed styles, exact text line-breaks, images) and copies a capture to your clipboard | `dist/extension` |
-| **Web2Fig** (Figma plugin) | Reads the capture and builds the layers in your file | `dist/plugin` |
+| **Web2Fig Capture** (browser extension, Microsoft Edge; also loads in Chrome) | Reads the live page (positions, computed styles, exact text line-breaks, images) and copies a capture to your clipboard | `dist/extension` |
+| **Web2Fig** (Figma plugin) | Builds the layers from a link or from a capture | `dist/plugin` |
 
 ## Install (≈2 minutes, $0)
 
@@ -103,6 +117,24 @@ and imports all sizes side by side in Figma, named like `Mobile · 390`.
 - Scroll-scrubbed animations (see above). Very large pages stop at 30,000 layers.
 - Pages behind logins work (you capture your own logged-in tab).
 - Respect copyright and trademarks: use it on your own sites, for audits and for inspiration.
+
+## FAQ
+
+**What is Web2Fig?** A free Figma plugin and Microsoft Edge extension that converts a website into editable Figma layers, with real text, images, SVG and Auto Layout, instead of a screenshot.
+
+**How do I import a website into Figma?** Open the Web2Fig plugin, paste the website address, choose a size and press Fetch design. Or capture the page with the Edge extension and paste it into the plugin's Paste capture tab.
+
+**Does it work for pages behind a login?** Yes, with the Edge extension, because it captures the page open in your own browser. Paste-a-link only opens public pages.
+
+**Can I turn an AI-generated website into Figma layers?** Yes. Paste the site's public link, or capture it with the extension, then edit the layers in Figma. Complex animations and highly dynamic apps may not match the original exactly (see Known limits).
+
+**Is it free? Do I need an account?** It is free and needs no account. The free link-import server limits how many captures each visitor can run per hour.
+
+**Is my data private?** Paste capture stays on your computer. Paste-a-link sends only the website address and size to the Web2Fig server, which does not store them. There is no tracking. See [PRIVACY.md](PRIVACY.md).
+
+**Does it support responsive layouts?** Yes. Choose All 3 sizes to import desktop, tablet and mobile side by side.
+
+**Is there a Chrome version?** The extension is published for Microsoft Edge today; the same build also loads in Chrome from `dist/extension` (Developer mode). Paste-a-link works without any extension.
 
 ## Develop
 
