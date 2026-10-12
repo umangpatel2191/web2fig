@@ -222,7 +222,7 @@ fs.mkdirSync(liOut, { recursive: true });
 const LINKEDIN = {
   'linkedin-1-both-ways-1080x1350': [1080, 1350, `<body class="bg" style="width:1080px;height:1350px;padding:84px 70px 0;display:flex;flex-direction:column;overflow:hidden">
     ${brandRow(84, 58)}
-    <div class="serif" style="font-size:92px;line-height:1.02;font-weight:700;letter-spacing:-.035em;margin-top:44px">Paste a link.<br>Get editable<br>Figma layers.</div>
+    <div class="serif" style="font-size:92px;line-height:1.02;font-weight:700;letter-spacing:-.035em;margin-top:44px">AI built the site.<br>Now edit it<br>in Figma.</div>
     <div style="display:flex;gap:12px;margin-top:34px;font-size:22px"><span class="chip">Paste a link</span><span class="chip">Edge extension</span><span class="chip">Auto Layout</span></div>
     <div style="display:flex;gap:26px;align-items:flex-end;margin-top:auto;justify-content:center">
       <img class="dev" src="${shots.plugin}" style="height:740px;margin-bottom:-60px">
