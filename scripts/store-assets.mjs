@@ -145,7 +145,7 @@ const wayCard = (k, tag, title, nodes, steps) => `<div class="card" style="flex:
   <div class="serif" style="font-size:${48 * k}px;font-weight:700;letter-spacing:-.02em;margin:${18 * k}px 0 ${28 * k}px;line-height:1.05">${title}</div>
   <div style="display:flex;align-items:flex-start;gap:${6 * k}px">${nodes}</div>
   <div style="margin-top:${30 * k}px;display:grid;gap:${14 * k}px;border-top:1px dashed rgba(255,244,230,.25);padding-top:${26 * k}px">${steps.map((t, i) => `<div style="display:flex;gap:${14 * k}px;font-size:${23 * k}px;line-height:1.4"><span style="flex:none;width:${34 * k}px;height:${34 * k}px;border-radius:50%;background:#fff4e6;color:#5a1e24;font-weight:800;display:grid;place-items:center;font-size:${19 * k}px">${i + 1}</span><span>${t}</span></div>`).join('')}</div></div>`;
-const ways = (k) => `<div style="display:flex;gap:${34 * k}px">
+const ways = (k, col = false) => `<div style="display:flex;flex-direction:${col ? 'column' : 'row'};gap:${(col ? 26 : 34) * k}px">
   ${wayCard(k, 'Direct', 'Paste a link', node(k, 'link', 'Your link', 'Paste an address') + arr(k) + node(k, 'globe', 'Web2Fig', 'Opens &amp; converts') + arr(k) + node(k, 'layers', 'Figma', 'Editable layers'), ['Type a website address in the plugin.', 'Pick Desktop, Tablet, Mobile or all three.', 'Fetch, review, then Import.'])}
   ${wayCard(k, 'With the Edge extension', 'Paste a capture', node(k, 'puzzle', 'Edge', 'Click Web2Fig') + arr(k) + node(k, 'copy', 'Clipboard', 'JSON copied') + arr(k) + node(k, 'layers', 'Figma', 'Paste here'), ['Install the free extension from Microsoft Edge Add-ons.', 'Open any page, even behind a login, and click it.', 'Press Ctrl+V in the plugin, then Import.'])}
 </div>`;
@@ -215,6 +215,30 @@ for (const [n, [w, h, html]] of Object.entries(EDGE)) await render(n, w, h, html
   console.log('wrote store-logo-300x300');
 }
 fs.copyFileSync(path.join(dist, 'plugin', 'icon-128.png'), path.join(figmaOut, 'icon-128.png'));
+
+/* ---------- LinkedIn post images (release/3-LinkedIn-Post) ---------- */
+const liOut = path.join(root, 'release', '3-LinkedIn-Post');
+fs.mkdirSync(liOut, { recursive: true });
+const LINKEDIN = {
+  'linkedin-1-both-ways-1080x1350': [1080, 1350, `<body class="bg" style="width:1080px;height:1350px;padding:84px 70px 0;display:flex;flex-direction:column;overflow:hidden">
+    ${brandRow(84, 58)}
+    <div class="serif" style="font-size:92px;line-height:1.02;font-weight:700;letter-spacing:-.035em;margin-top:44px">Paste a link.<br>Get editable<br>Figma layers.</div>
+    <div style="display:flex;gap:12px;margin-top:34px;font-size:22px"><span class="chip">Paste a link</span><span class="chip">Edge extension</span><span class="chip">Auto Layout</span></div>
+    <div style="display:flex;gap:26px;align-items:flex-end;margin-top:auto;justify-content:center">
+      <img class="dev" src="${shots.plugin}" style="height:740px;margin-bottom:-60px">
+      <img class="dev" src="${shots.popupIdle}" style="height:600px;margin-bottom:-60px;border-radius:22px">
+    </div></body>`],
+  'linkedin-2-two-ways-1080x1350': [1080, 1350, `<body class="bg" style="width:1080px;height:1350px;padding:70px 50px;display:flex;flex-direction:column;justify-content:center">
+    <div class="serif" style="font-size:68px;line-height:1.05;font-weight:700;letter-spacing:-.03em;margin-bottom:34px">Two ways to bring a site into Figma</div>
+    ${ways(0.78, true)}
+    <div style="margin-top:30px;font-size:26px;opacity:.85">Free · Web2Fig plugin for Figma + Edge extension</div></body>`],
+  'linkedin-3-wide-1200x627': [1200, 627, `<body class="bg" style="width:1200px;height:627px;display:flex;align-items:center;gap:50px;padding:0 70px;overflow:hidden">
+    <div style="flex:1">${brandRow(76, 54)}
+      <div class="serif" style="font-size:60px;line-height:1.04;font-weight:700;letter-spacing:-.03em;margin-top:26px">Website to editable Figma layers</div>
+      <div style="display:flex;gap:12px;margin-top:26px;font-size:19px"><span class="chip">Paste a link</span><span class="chip">Edge extension</span></div></div>
+    <img class="dev" src="${shots.plugin}" style="height:560px;margin-top:150px;border-radius:22px"></body>`],
+};
+for (const [n, [w, h, html]] of Object.entries(LINKEDIN)) await render(n, w, h, html, liOut);
 
 await browser.close();
 server.close();
