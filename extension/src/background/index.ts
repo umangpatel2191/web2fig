@@ -222,7 +222,7 @@ chrome.windows.onRemoved.addListener((id) => {
 
 async function getSettings(): Promise<Settings> {
   const stored = (await chrome.storage.local.get(SETTINGS_KEY))[SETTINGS_KEY] as Partial<Settings> | undefined;
-  return { mode: stored?.mode ?? DEFAULT_SETTINGS.mode, options: { ...DEFAULT_CAPTURE_OPTIONS, ...stored?.options } };
+  return { mode: DEFAULT_SETTINGS.mode, options: { ...DEFAULT_CAPTURE_OPTIONS, ...stored?.options } }; // always the full page, whatever an older version saved
 }
 
 /* ------------------------------------------------------------------ */

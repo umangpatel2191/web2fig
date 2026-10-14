@@ -4,12 +4,6 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const app = $('app');
 const isMac = /mac|iphone|ipad/i.test(navigator.platform);
 
-const MODES: CaptureMode[] = ['full', 'visible', 'element'];
-const MODE_COPY: Record<CaptureMode, { hint: string; label: string }> = {
-  full: { hint: 'The whole scrollable page, top to bottom.', label: 'Capture full page' },
-  visible: { hint: 'Only what is on screen right now.', label: 'Capture visible area' },
-  element: { hint: 'Hover and click any section, card or component.', label: 'Pick an element' },
-};
 const SPEED_COPY: Record<ScrollSpeed, string> = {
   balanced: 'Steady. Right for most websites',
   thorough: 'Slower, waits longer. For heavy animations',
@@ -28,10 +22,6 @@ const setState = (s: 'idle' | 'busy' | 'done') => (app.dataset.state = s);
 /* ------------------------------------------------------------------ */
 
 function renderMode(): void {
-  document.querySelectorAll<HTMLButtonElement>('.seg-item').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.mode === settings.mode)));
-  $('modeSeg').dataset.i = String(MODES.indexOf(settings.mode));
-  $('modeHint').textContent = MODE_COPY[settings.mode].hint;
-  $('captureLabel').textContent = MODE_COPY[settings.mode].label;
   renderScroll();
 }
 
@@ -178,20 +168,13 @@ async function init(): Promise<void> {
   $('shortcut').textContent = isMac ? '⌥⇧C' : 'Alt+Shift+C';
 
   const stored = (await chrome.storage.local.get('settings')).settings as Partial<Settings> | undefined;
-  settings = { mode: stored?.mode ?? 'full', options: { ...DEFAULT_CAPTURE_OPTIONS, ...stored?.options } };
+  settings = { mode: 'full', options: { ...DEFAULT_CAPTURE_OPTIONS, ...stored?.options } };
   if (settings.options.speed !== 'thorough') settings.options.speed = 'balanced'; // older builds stored `slow: boolean`
   $<HTMLInputElement>('optLazy').checked = settings.options.lazy;
   $<HTMLInputElement>('optImages').checked = settings.options.images;
   $<HTMLInputElement>('optResponsive').checked = settings.options.responsive;
   renderMode();
 
-  document.querySelectorAll<HTMLButtonElement>('.seg-item').forEach((b) =>
-    b.addEventListener('click', () => {
-      settings.mode = b.dataset.mode as CaptureMode;
-      renderMode();
-      void persist();
-    }),
-  );
   document.querySelectorAll<HTMLButtonElement>('#speedSeg [data-speed]').forEach((b) =>
     b.addEventListener('click', () => {
       settings.options.speed = b.dataset.speed as ScrollSpeed;
