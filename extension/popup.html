@@ -19,6 +19,7 @@
 
       <!-- IDLE -->
       <section class="view view-idle">
+        <div class="scroll">
         <div class="hero">
           <svg class="deco" viewBox="0 0 190 150" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><circle cx="160" cy="96" r="92"/><circle cx="160" cy="96" r="58"/><path d="M160 0v150M40 96h150"/><circle cx="120" cy="40" r="3" fill="currentColor"/></svg>
           <h2>Capture any website in one click</h2>
@@ -79,12 +80,6 @@
           </label>
         </div>
 
-        <button class="primary" id="capture">
-          <svg class="cam" viewBox="0 0 24 24"><path d="M5 9V6.5A1.5 1.5 0 016.5 5H9M15 5h2.5A1.5 1.5 0 0119 6.5V9M19 15v2.5a1.5 1.5 0 01-1.5 1.5H15M9 19H6.5A1.5 1.5 0 015 17.5V15"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.2"/></svg>
-          <span id="captureLabel">Capture full page</span>
-          <kbd id="shortcut">Alt+Shift+C</kbd>
-        </button>
-        <p class="error" id="error" hidden></p>
 
         <details class="tipbox">
           <summary>Animated site? Do this first</summary>
@@ -130,6 +125,15 @@
             <span class="txt"><i>Phone</i><a href="tel:7600363306">7600363306</a></span>
             <button class="cp" type="button" data-copy="7600363306" aria-label="Copy phone number"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/></svg></button>
           </div>
+        </div>
+        </div>
+        <div class="cta-bar">
+          <button class="primary" id="capture">
+            <svg class="cam" viewBox="0 0 24 24"><path d="M5 9V6.5A1.5 1.5 0 016.5 5H9M15 5h2.5A1.5 1.5 0 0119 6.5V9M19 15v2.5a1.5 1.5 0 01-1.5 1.5H15M9 19H6.5A1.5 1.5 0 015 17.5V15"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.2"/></svg>
+            <span id="captureLabel">Capture full page</span>
+            <kbd id="shortcut">Alt+Shift+C</kbd>
+          </button>
+          <p class="error" id="error" hidden></p>
         </div>
       </section>
 

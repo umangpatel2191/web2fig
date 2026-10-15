@@ -37,6 +37,16 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
+/** Re-opens the popup so the "paste it in Figma" screen is shown even if the browser closed the popup during the capture. */
+async function showPopupAgain(windowId?: number): Promise<void> {
+  try {
+    const action = chrome.action as { openPopup?: (options?: { windowId?: number }) => Promise<void> };
+    if (action.openPopup) await action.openPopup(windowId !== undefined ? { windowId } : undefined);
+  } catch {
+    /* the browser may refuse; the on-page notice and the toolbar tick still tell the user */
+  }
+}
+
 async function activeTab(): Promise<chrome.tabs.Tab | undefined> {
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   return tab;
@@ -237,6 +247,7 @@ async function finalizeResponsive(session: Session): Promise<void> {
   await chrome.action.setBadgeBackgroundColor({ color: summary.copied ? '#22c55e' : '#f59e0b', tabId: session.originTabId }).catch(() => undefined);
   await chrome.action.setBadgeText({ text: summary.copied ? '✓' : '!', tabId: session.originTabId }).catch(() => undefined);
   broadcast({ type: 'webframe:done', summary });
+  await showPopupAgain(session.originWindowId);
 }
 
 chrome.windows.onRemoved.addListener((id) => {
@@ -315,6 +326,7 @@ chrome.runtime.onConnect.addListener((port) => {
         }
         reply({ type: 'finished', copied: summary.copied });
         broadcast({ type: 'webframe:done', summary });
+        await showPopupAgain(port.sender?.tab?.windowId);
         break;
       }
     }

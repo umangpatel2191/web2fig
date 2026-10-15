@@ -20,7 +20,7 @@ async function run(mode: CaptureMode, options: CaptureOptions): Promise<void> {
   };
   port.onMessage.addListener((m: { type: string; copied?: boolean }) => {
     if (m.type !== 'finished') return;
-    if (m.copied) toast('success', 'Copied to clipboard', pasteHint(), 6000);
+    if (m.copied) toast('success', 'Copied! Now paste it in Figma', pasteHint(), 20000);
     else toast('error', 'Captured, but the clipboard was blocked', 'Open the Web2Fig popup and use “Download .json”.', 8000);
   });
 

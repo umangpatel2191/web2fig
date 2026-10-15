@@ -108,7 +108,7 @@ function setProgress(stage: string, pct: number): void {
 /* ------------------------------------------------------------------ */
 
 function renderDone(s: CaptureSummary): void {
-  $('doneTitle').textContent = s.copied ? 'Copied to clipboard' : 'Capture ready';
+  $('doneTitle').textContent = s.copied ? 'Copied. Now paste it in Figma' : 'Capture ready';
   $('doneSub').textContent = s.copied ? `${s.title || s.url}` : 'The clipboard was blocked. Use “Download .json” and drop the file into the plugin.';
   $('stats').innerHTML = (
     [
@@ -255,7 +255,8 @@ async function init(): Promise<void> {
   });
 
   const last = (await chrome.runtime.sendMessage({ type: 'webframe:getLast' })) as { summary: CaptureSummary | null };
-  renderLast(last.summary);
+  if (last.summary && Date.now() - last.summary.at < 60_000) renderDone(last.summary);
+  else renderLast(last.summary);
 }
 
 void init();

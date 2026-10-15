@@ -64,6 +64,15 @@ try {
   await popup.goto(`chrome-extension://${extId}/popup.html`, { waitUntil: 'load' });
   const send = (msg) => popup.evaluate((m) => chrome.runtime.sendMessage(m), msg);
 
+  /* 0. The capture button must be visible straight away (no scrolling) in a normal 380x600 popup */
+  await popup.setViewport({ width: 380, height: 600 });
+  await popup.reload({ waitUntil: "load" });
+  await sleep(600);
+  const ctaBox = await (await popup.$("#capture")).boundingBox();
+  check("Capture button is visible without scrolling", !!ctaBox && ctaBox.y >= 0 && ctaBox.y + ctaBox.height <= 600, ctaBox ? `top=${Math.round(ctaBox.y)}, bottom=${Math.round(ctaBox.y + ctaBox.height)} of 600` : "not found");
+  const stillScrolls = await popup.evaluate(() => { const el = document.querySelector(".view-idle .scroll"); return el.scrollHeight > el.clientHeight; });
+  check("The options above it scroll on their own", stillScrolls);
+
   async function runCapture(mode, options, interact) {
     await page.bringToFront();
     await sleep(300);
@@ -89,6 +98,13 @@ try {
   check('Full page: captured', r.file.stats.layers > 5, `layers=${r.file.stats.layers}`);
   check('Full page: hotlink-protected images included', r.file.stats.images >= 3 && assets >= 1, `images=${r.file.stats.images}, assets=${assets}`);
   check('Full page: server refused once, then accepted with the page Referer', log.imageHits.includes(403) && log.imageHits.includes(200), `hits=${[...new Set(log.imageHits)].join('/')}`);
+
+  /* after a capture, opening the popup shows what to do next */
+  await popup.reload({ waitUntil: "load" });
+  await sleep(800);
+  const state = await popup.evaluate(() => document.getElementById("app").dataset.state);
+  const doneTitle = await popup.evaluate(() => document.getElementById("doneTitle").textContent);
+  check("Popup opened after a capture shows the next step", state === "done" && /paste it in figma/i.test(doneTitle), `state=${state}, title="${doneTitle}"`);
 
   /* 2. Visible area */
   r = await runCapture('visible', {});

@@ -61,7 +61,7 @@ async function shotPopup(state) {
   if (state === 'how')
     await p.evaluate(() => {
       const el = [...document.querySelectorAll('.lbl')].find((e) => /how it works/i.test(e.textContent));
-      const view = document.querySelector('.view-idle');
+      const view = document.querySelector('.view-idle .scroll');
       view.scrollTop += el.getBoundingClientRect().top - view.getBoundingClientRect().top - 10;
     });
   await sleep(700);

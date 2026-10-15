@@ -8,7 +8,7 @@ let timer: number | undefined;
 
 const STYLE = `
   :host{all:initial}
-  .t{display:flex;gap:12px;align-items:flex-start;width:320px;padding:12px 14px 13px;border-radius:16px;position:relative;overflow:hidden;
+  .t{pointer-events:auto;cursor:pointer;display:flex;gap:12px;align-items:flex-start;width:320px;padding:12px 14px 13px;border-radius:16px;position:relative;overflow:hidden;
      font:500 13px/1.4 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff;background:rgba(32,14,16,.95);backdrop-filter:blur(14px);
      box-shadow:0 14px 44px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.09);animation:in .26s cubic-bezier(.2,.9,.2,1)}
   @keyframes in{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
@@ -49,6 +49,7 @@ export function toast(kind: ToastKind, title: string, detail = '', hideAfterMs =
   const d = r.querySelector('.d') as HTMLElement;
   if (detail) d.textContent = detail;
   else d.remove();
+  if (kind !== 'progress') (r.querySelector('.t') as HTMLElement).addEventListener('click', hideToast); // click to dismiss
   if (hideAfterMs) timer = window.setTimeout(hideToast, hideAfterMs);
 }
 
@@ -59,4 +60,4 @@ export function hideToast(): void {
   root = null;
 }
 
-export const pasteHint = (): string => `Open ${BRAND.name} in Figma and press ${/mac|iphone|ipad/i.test(navigator.platform) ? '⌘' : 'Ctrl'}+V`;
+export const pasteHint = (): string => `Open the ${BRAND.name} plugin in Figma, choose “Paste capture” and press ${/mac|iphone|ipad/i.test(navigator.platform) ? '⌘' : 'Ctrl'}+V.`;
