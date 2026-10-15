@@ -7,11 +7,58 @@ const MAX_DIM = 2048;
  * Downloads an image with the extension's privileges (no CORS) and normalises it for Figma.
  * blob: URLs only exist inside the page that made them, so those are read by the content script instead.
  */
-export async function fetchAsset(url: string): Promise<Asset> {
+export async function fetchAsset(url: string, pageUrl?: string): Promise<Asset> {
   if (/^blob:/i.test(url)) throw new Error('blob URLs are read inside the page');
-  const res = await fetch(url, { credentials: 'include' });
+  let res = await fetch(url, { credentials: 'include' });
+  // Many image servers refuse "hotlinking": they answer 403 unless the request names the website as its Referer.
+  // A browser tab sends that automatically; this background fetch does not, so send the page's address for that host and retry.
+  if ((res.status === 401 || res.status === 403) && pageUrl && (await sendPageReferer(url, pageUrl))) res = await fetch(url, { credentials: 'include' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return blobToAsset(await res.blob(), url);
+}
+
+const refererRules = new Map<string, string>(); // image host -> referer already set for it
+
+function ruleIdFor(host: string): number {
+  let h = 7;
+  for (const c of host) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return (h % 1_000_000) + 1;
+}
+
+/** Makes this extension's own requests to `imageUrl`'s host carry the page as Referer (nothing else is changed). */
+async function sendPageReferer(imageUrl: string, pageUrl: string): Promise<boolean> {
+  try {
+    const host = new URL(imageUrl).hostname;
+    const referer = new URL(pageUrl).origin + '/';
+    if (refererRules.get(host) === referer) return true;
+    const id = ruleIdFor(host);
+    await chrome.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: [id],
+      addRules: [
+        {
+          id,
+          priority: 1,
+          action: { type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS, requestHeaders: [{ header: 'referer', operation: chrome.declarativeNetRequest.HeaderOperation.SET, value: referer }] },
+          condition: { requestDomains: [host], tabIds: [chrome.tabs.TAB_ID_NONE], resourceTypes: [chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST] },
+        },
+      ],
+    });
+    refererRules.set(host, referer);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Removes the Referer rules (called when a new capture starts, so nothing lingers between captures). */
+export async function clearRefererRules(): Promise<void> {
+  refererRules.clear();
+  try {
+    const rules = await chrome.declarativeNetRequest.getSessionRules();
+    if (rules.length) await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: rules.map((r) => r.id) });
+  } catch {
+    /* nothing to clear */
+  }
 }
 
 /** Crops a rectangle (CSS px of the visible viewport) out of a full-tab screenshot. */

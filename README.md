@@ -42,8 +42,9 @@ Pin it from the puzzle-piece menu.
 ## Use
 
 1. Open any website, click the **Web2Fig** icon (or press `Alt+Shift+C`).
-2. Web2Fig captures the **full page**, top to bottom. The result is copied to your clipboard automatically.
-3. In Figma run **Plugins → Development → Web2Fig**, press `⌘V` / `Ctrl+V`, review the preview, hit **Import**.
+2. Pick a mode: **Full page**, **Visible area**, or **Pick element** (hover + click; `↑`/`↓` select parent/child). Optionally choose a **Screen size** (desktop, tablet or mobile width) to capture at.
+3. Click capture. The result is copied to your clipboard automatically.
+4. In Figma run **Plugins → Development → Web2Fig**, press `⌘V` / `Ctrl+V`, review the preview, hit **Import**.
 
 If the clipboard is blocked, use **Download .json** in the popup and drop the file into the plugin.
 
@@ -58,7 +59,7 @@ Content that animates in (reveal-on-scroll, lazy images) only exists once it has
 4. Elements that are still invisible (`opacity: 0`) at capture time are skipped, and finite CSS/Web animations are jumped to their end state first.
 
 Scroll-*scrubbed* animations (GSAP ScrollTrigger `scrub`, pinned sections) are driven by the scroll position and snap back when you return to the
-top, so those sections can still capture in their starting state. Use the **Scroll pace: Thorough** option, or scroll the page yourself first, for those sections.
+top, so those sections can still capture in their starting state. Capture those pieces one by one with **Pick element** while the section is on screen.
 
 ## Capture different breakpoints
 

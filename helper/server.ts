@@ -204,6 +204,18 @@ function fail(job: Job, e: unknown): void {
   job.error = job.cancelled ? 'Cancelled' : e instanceof Error ? e.message : String(e);
 }
 
+const BOT_CHECK = /just a moment|attention required|performing security verification|verify (that )?you are (a )?human|checking your browser before accessing/i;
+
+/** True when the page is a "prove you are not a bot" screen. A real browser usually clears these in seconds, so wait a little; never try to get around one. */
+async function isBotCheck(page: Page): Promise<boolean> {
+  for (let i = 0; i < 6; i++) {
+    const hit = await page.evaluate((src) => new RegExp(src, 'i').test(`${document.title} ${(document.body?.innerText ?? '').slice(0, 600)}`), BOT_CHECK.source).catch(() => false);
+    if (!hit) return false;
+    await sleep(1500);
+  }
+  return true;
+}
+
 async function captureOne(job: Job, browser: Browser, width: number, mobile: boolean, label: string, slot: number, slots: number): Promise<string> {
   const { req } = job;
   const page = await browser.newPage();
@@ -283,6 +295,7 @@ async function captureOne(job: Job, browser: Browser, width: number, mobile: boo
     if (blockedReason) throw new Error(blockedReason);
     await settleNavigation();
     await sleep(req.waitMs);
+    if (await isBotCheck(page)) throw new Error('This website shows a bot check to servers, so it can’t be opened here. Capture it with the Web2Fig Edge extension instead, then paste it in the “Paste capture” tab.');
 
     const attempt = async (): Promise<string> => {
       if (req.dismissBanners) {

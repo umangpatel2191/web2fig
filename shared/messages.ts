@@ -15,9 +15,11 @@ export interface CaptureOptions {
   images: boolean;
   /** Also capture a tablet (768px) and a mobile (390px) layout and import all sizes side by side. */
   responsive: boolean;
+  /** Capture at this viewport width (opens a temporary window of that width). `null` = the current window as it is. */
+  width: number | null;
 }
 
-export const DEFAULT_CAPTURE_OPTIONS: CaptureOptions = { lazy: true, speed: 'balanced', images: true, responsive: false };
+export const DEFAULT_CAPTURE_OPTIONS: CaptureOptions = { lazy: true, speed: 'balanced', images: true, responsive: false, width: null };
 
 export interface CaptureSummary {
   title: string;

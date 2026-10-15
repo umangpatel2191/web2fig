@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Web2Fig — Website to Figma",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Capture any website as editable Figma layers: real frames, text, images and Auto Layout. Paste into Figma with the free plugin.",
   "minimum_chrome_version": "116",
   "action": {
@@ -28,7 +28,8 @@
     "scripting",
     "storage",
     "offscreen",
-    "clipboardWrite"
+    "clipboardWrite",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "<all_urls>"

@@ -1,6 +1,6 @@
 import { DEFAULT_CAPTURE_OPTIONS, type CaptureMode, type CaptureOptions, type CaptureSummary } from '../../../shared/messages';
 import type { CaptureFile } from '../../../shared/schema';
-import { cropScreenshot, fetchAsset, makeThumbnail } from './assets';
+import { clearRefererRules, cropScreenshot, fetchAsset, makeThumbnail } from './assets';
 import { loadLast, saveLast } from './store';
 
 const PORT_NAME = 'webframe-capture';
@@ -48,7 +48,9 @@ async function startCapture(mode: CaptureMode, options: CaptureOptions): Promise
   if (!/^(https?|file):/i.test(tab.url ?? '')) {
     return { ok: false, error: 'Chrome doesn’t allow extensions to read this kind of page. Open a regular website and try again.' };
   }
+  await clearRefererRules();
   if (options.responsive && mode !== 'element') return startResponsive(tab, mode, options);
+  if (options.width && mode !== 'element') return startSized(tab, mode, options);
   return injectAndStart(tab.id, mode, options);
 }
 
@@ -105,7 +107,7 @@ async function startResponsive(tab: chrome.tabs.Tab, mode: CaptureMode, options:
     originTabId: tab.id!,
     tabId: tab.id!,
     targets: [
-      { name: 'current', width: null },
+      { name: options.width ? 'desktop' : 'current', width: options.width ?? null },
       { name: 'tablet', width: 768 },
       { name: 'mobile', width: 390 },
     ],
@@ -117,6 +119,27 @@ async function startResponsive(tab: chrome.tabs.Tab, mode: CaptureMode, options:
   const started = await injectAndStart(tab.id!, mode, options);
   if (!started.ok) sessions.delete(tab.id!);
   return started;
+}
+
+/** A single capture at a chosen width: opens one temporary window of that width, captures it, closes it. */
+async function startSized(tab: chrome.tabs.Tab, mode: CaptureMode, options: CaptureOptions): Promise<StartResult> {
+  const win = await chrome.windows.get(tab.windowId);
+  const width = options.width as number;
+  const session: Session = {
+    mode,
+    options,
+    url: tab.url ?? '',
+    height: win.height ?? 900,
+    originWindowId: tab.windowId,
+    originTabId: tab.id!,
+    tabId: tab.id!,
+    targets: [{ name: sizeName(width).toLowerCase(), width }],
+    idx: 0,
+    results: [],
+    notes: [],
+  };
+  void openNextTarget(session); // the popup may close as soon as the new window takes focus, so don't wait for it
+  return { ok: true };
 }
 
 function waitForComplete(tabId: number, timeoutMs: number): Promise<void> {
@@ -191,7 +214,7 @@ async function finalizeResponsive(session: Session): Promise<void> {
   const widthOf = (f: CaptureFile) => Math.round(f.source?.viewport?.w ?? f.root.w);
   const base = files[0];
   base.label = `${sizeName(widthOf(base))} · ${widthOf(base)}`;
-  base.breakpoints = files.slice(1).map((f) => {
+  if (files.length > 1) base.breakpoints = files.slice(1).map((f) => {
     delete f.thumbnail; // only the main layout needs a preview
     const w = widthOf(f);
     return { label: `${sizeName(w)} · ${w}`, width: w, file: f };
@@ -200,7 +223,7 @@ async function finalizeResponsive(session: Session): Promise<void> {
   const first = session.results[0].summary;
   const summary: CaptureSummary = {
     ...first,
-    title: `${first.title} · ${files.length} sizes`,
+    title: files.length > 1 ? `${first.title} · ${files.length} sizes` : first.title,
     layers: session.results.reduce((s, r) => s + r.summary.layers, 0),
     texts: session.results.reduce((s, r) => s + r.summary.texts, 0),
     images: session.results.reduce((s, r) => s + r.summary.images, 0),
@@ -222,7 +245,7 @@ chrome.windows.onRemoved.addListener((id) => {
 
 async function getSettings(): Promise<Settings> {
   const stored = (await chrome.storage.local.get(SETTINGS_KEY))[SETTINGS_KEY] as Partial<Settings> | undefined;
-  return { mode: DEFAULT_SETTINGS.mode, options: { ...DEFAULT_CAPTURE_OPTIONS, ...stored?.options } }; // always the full page, whatever an older version saved
+  return { mode: stored?.mode ?? DEFAULT_SETTINGS.mode, options: { ...DEFAULT_CAPTURE_OPTIONS, ...stored?.options } };
 }
 
 /* ------------------------------------------------------------------ */
@@ -309,7 +332,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
 
     case 'webframe:fetchAsset':
-      fetchAsset(msg.url).then(
+      fetchAsset(msg.url, sender.tab?.url).then(
         (asset) => sendResponse({ ok: true, asset }),
         (e) => sendResponse({ ok: false, error: String(e?.message ?? e) }),
       );
