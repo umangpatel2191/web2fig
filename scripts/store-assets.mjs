@@ -163,7 +163,7 @@ const FIGMA = {
   'features-1920x1080': [1920, 1080, `<body class="bg" style="width:1920px;height:1080px;padding:92px 120px">
     <div class="serif" style="font-size:78px;font-weight:700;letter-spacing:-.03em;margin-bottom:46px">Real layers, not a screenshot</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:28px">
-      ${card('text', 'Exact text', 'Browser line breaks, fonts and styles arrive as editable text, with clickable links.')}
+      ${card('text', 'Exact text', 'Browser line breaks, fonts and styles arrive as editable text.')}
       ${card('grid', 'Auto Layout', 'Rows, columns and wrapping grids become Auto Layout wherever it matches the page.')}
       ${card('resp', 'Responsive set', 'Desktop, tablet and mobile captured and placed side by side.')}
       ${card('mask', 'Masks &amp; shapes', 'Clip-paths, gradients and masks come across as native Figma masks.')}

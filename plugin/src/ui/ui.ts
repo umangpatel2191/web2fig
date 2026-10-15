@@ -13,6 +13,7 @@ import { MAGIC, SCHEMA_VERSION, type CaptureFile } from '../../../shared/schema'
 type Screen = 'empty' | 'fetching' | 'ready' | 'importing' | 'done' | 'error';
 type Tab = 'link' | 'paste';
 type SizeChoice = 'desktop' | 'tablet' | 'mobile' | 'all';
+type DeviceKey = 'desktop' | 'tablet' | 'mobile';
 type HelperState = 'checking' | 'starting' | 'up' | 'down' | 'nochrome';
 let helperError = '';
 
@@ -27,14 +28,25 @@ interface State {
   tab: Tab;
   url: string;
   size: SizeChoice;
+  /** the chosen viewport width for each device */
+  widths: Record<DeviceKey, number>;
   scroll: boolean;
   helper: HelperState;
 }
 
-const state: State = { screen: 'empty', capture: null, options: { ...DEFAULT_IMPORT_OPTIONS }, result: null, error: '', notice: '', tab: __LINK_MODE__ ? 'link' : 'paste', url: '', size: 'desktop', scroll: true /* always on: not a user option */, helper: 'checking' };
+const state: State = { screen: 'empty', capture: null, options: { ...DEFAULT_IMPORT_OPTIONS }, result: null, error: '', notice: '', tab: __LINK_MODE__ ? 'link' : 'paste', url: '', size: 'desktop', widths: { desktop: 1440, tablet: 768, mobile: 390 }, scroll: true /* always on: not a user option */, helper: 'checking' };
 
 const HELPER = __HELPER_URL__;
-const SIZE_PX: Record<Exclude<SizeChoice, 'all'>, number> = { desktop: 1440, tablet: 768, mobile: 390 };
+/** Common screen widths per device. The first listed default (1440 / 768 / 390) is the recommended one. */
+const SIZE_OPTIONS: Record<DeviceKey, [number, string][]> = {
+  desktop: [[1920, 'Full HD'], [1536, 'Large laptop'], [1440, 'Laptop'], [1366, 'Small laptop'], [1280, 'Compact desktop']],
+  tablet: [[834, 'iPad Pro 11"'], [820, 'iPad Air'], [810, 'iPad 10.2"'], [768, 'iPad / iPad mini'], [600, 'Small tablet']],
+  mobile: [[430, 'iPhone Pro Max'], [412, 'Pixel / Galaxy'], [393, 'iPhone Pro'], [390, 'iPhone 15'], [375, 'iPhone SE / mini'], [360, 'Small Android']],
+};
+const sizeHintText = (): string =>
+  state.size === 'all'
+    ? `Desktop ${state.widths.desktop} + tablet ${state.widths.tablet} + mobile ${state.widths.mobile} px, side by side.${__CLOUD__ ? ' Counts as 3 captures.' : ''}`
+    : `Viewport width ${state.widths[state.size]} px.`;
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const app = document.getElementById('app') as HTMLElement;
 const isMac = /mac|iphone|ipad/i.test(navigator.platform);
@@ -161,8 +173,9 @@ async function startFetch(): Promise<void> {
     const responsive = state.size === 'all';
     const body = {
       url: raw,
-      width: state.size === 'all' ? SIZE_PX.desktop : SIZE_PX[state.size],
+      width: state.size === 'all' ? state.widths.desktop : state.widths[state.size],
       responsive,
+      ...(responsive ? { tabletWidth: state.widths.tablet, mobileWidth: state.widths.mobile } : {}),
       lazy: state.scroll,
       speed: 'balanced',
       images: true,
@@ -258,6 +271,11 @@ function pastePanel(): string {
     `;
 }
 
+function sizeSelect(dev: DeviceKey): string {
+  const opts = SIZE_OPTIONS[dev].map(([w, name]) => `<option value="${w}" ${state.widths[dev] === w ? 'selected' : ''}>${w} px · ${esc(name)}</option>`).join('');
+  return `<div class="select"><select data-dev="${dev}" aria-label="${dev} screen size">${opts}</select>${ic(ICON.chevron, '')}</div>`;
+}
+
 function linkPanel(): string {
   const sizes: [SizeChoice, string][] = [['desktop', 'Desktop'], ['tablet', 'Tablet'], ['mobile', 'Mobile'], ['all', 'All 3 sizes']];
   const sizeIcon: Record<SizeChoice, string> = { desktop: ICON.desktop, tablet: ICON.tablet, mobile: ICON.mobile, all: ICON.all };
@@ -266,12 +284,14 @@ function linkPanel(): string {
     <div class="linkbox">
       <label class="lbl" for="url">Website address</label>
       <div class="field">${ic(ICON.link, '')}<input id="url" type="text" inputmode="url" placeholder="https://example.com" value="${esc(state.url)}" autocomplete="off" autocapitalize="off" spellcheck="false" /></div>
-      <div class="lbl" style="margin-top:18px">Size</div>
-      <div class="seg4" id="sizeSeg" role="radiogroup" aria-label="Page size" data-i="${idx}">
+      <div class="lbl" style="margin-top:18px">Device</div>
+      <div class="seg4" id="sizeSeg" role="radiogroup" aria-label="Device" data-i="${idx}">
         <span class="knob" aria-hidden="true"></span>
         ${sizes.map(([k, label]) => `<button type="button" role="radio" data-size="${k}" aria-checked="${k === state.size}">${ic(sizeIcon[k])}<span>${label}</span></button>`).join('')}
       </div>
-      <p class="hint">${state.size === 'all' ? `Desktop 1440 + tablet 768 + mobile 390, side by side.${__CLOUD__ ? ' Counts as 3 captures.' : ''}` : `Viewport width ${SIZE_PX[state.size as Exclude<SizeChoice, 'all'>]}px.`}</p>
+      <div class="lbl" style="margin-top:14px">${state.size === 'all' ? 'Screen sizes' : 'Screen size'}</div>
+      ${state.size === 'all' ? (['desktop', 'tablet', 'mobile'] as DeviceKey[]).map((d) => `<div class="selrow"><span class="dev">${ic(sizeIcon[d], '')}${d[0].toUpperCase() + d.slice(1)}</span>${sizeSelect(d)}</div>`).join('') : sizeSelect(state.size)}
+      <p class="hint" id="sizeHint">${sizeHintText()}</p>
       <div class="note"><span class="tile">${ic(ICON.scroll, '')}</span><span class="txt"><b>The page is scrolled first</b><i>Automatically, so reveal animations play and lazy images load.</i></span></div>
       ${state.notice ? `<div class="or bad" role="alert" style="margin:10px 0 0">${esc(state.notice)}</div>` : ''}
       <button class="primary" id="fetchBtn" type="button"><span>Fetch design</span>${ic(ICON.arrow, '')}</button>
@@ -552,6 +572,13 @@ function bind(): void {
         const url = $<HTMLInputElement>('url')!;
         url.addEventListener('input', () => (state.url = url.value));
         url.addEventListener('keydown', (e) => e.key === 'Enter' && void startFetch());
+        document.querySelectorAll<HTMLSelectElement>('select[data-dev]').forEach((sel) =>
+          sel.addEventListener('change', () => {
+            state.widths[sel.dataset.dev as DeviceKey] = Number(sel.value);
+            const h = $('sizeHint');
+            if (h) h.textContent = sizeHintText();
+          }),
+        );
         document.querySelectorAll<HTMLButtonElement>('#sizeSeg [data-size]').forEach((b) =>
           b.addEventListener('click', () => {
             state.size = b.dataset.size as SizeChoice;

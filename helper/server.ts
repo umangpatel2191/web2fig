@@ -159,6 +159,9 @@ interface JobRequest {
   speed: 'balanced' | 'thorough';
   images: boolean;
   responsive: boolean;
+  /** widths used when `responsive` is on (desktop uses `width`) */
+  tabletWidth: number;
+  mobileWidth: number;
   waitMs: number;
   dismissBanners: boolean;
 }
@@ -336,8 +339,8 @@ async function run(job: Job): Promise<void> {
     const sizes = job.req.responsive
       ? [
           { label: 'Desktop', width: job.req.width, mobile: false },
-          { label: 'Tablet', width: 768, mobile: false },
-          { label: 'Mobile', width: 390, mobile: true },
+          { label: 'Tablet', width: job.req.tabletWidth, mobile: false },
+          { label: 'Mobile', width: job.req.mobileWidth, mobile: true },
         ]
       : [{ label: job.req.width <= 480 ? 'Mobile' : job.req.width <= 1000 ? 'Tablet' : 'Desktop', width: job.req.width, mobile: job.req.width <= 480 }];
     const files: Record<string, unknown>[] = [];
@@ -477,6 +480,8 @@ const server = http.createServer(async (rq, rs) => {
         speed: b.speed === 'thorough' ? 'thorough' : 'balanced',
         images: b.images !== false,
         responsive: !!b.responsive,
+        tabletWidth: Math.min(999, Math.max(480, Math.round(b.tabletWidth ?? 768))),
+        mobileWidth: Math.min(480, Math.max(320, Math.round(b.mobileWidth ?? 390))),
         waitMs: Math.min(PUBLIC ? 5_000 : 30_000, Math.max(0, Math.round(b.waitMs ?? 1500))),
         dismissBanners: b.dismissBanners !== false,
       };

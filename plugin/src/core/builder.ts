@@ -352,13 +352,7 @@ async function buildText(n: TextLayer, parent: Parent, st: State): Promise<Scene
   // where it ended in the browser instead of overlapping its neighbours.
   fitWidth(t, n, st);
 
-  if (n.href) {
-    try {
-      t.setRangeHyperlink(0, t.characters.length, { type: 'URL', value: n.href });
-    } catch {
-      /* unsupported URL – keep plain text */
-    }
-  }
+  // Links on the page are not turned into Figma hyperlinks: clicking text in view/prototype mode must not leave the design.
   if (n.stroke) {
     t.strokes = [solid(n.stroke.color, st.env)];
     t.strokeWeight = n.stroke.w;

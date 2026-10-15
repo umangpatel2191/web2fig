@@ -101,7 +101,7 @@ and imports all sizes side by side in Figma, named like `Mobile · 390`.
 - Form controls (values/placeholders, native checkbox / radio), list markers, open shadow DOM
 - Smart Auto Layout: rows, columns and **wrapping grids** are converted **only** when Figma reproduces the original positions within 2px; full-width children get `Fill`, otherwise the
   frame stays absolute so the design remains pixel-accurate. Resize **constraints** (centre / right / stretch) are inferred from where each layer sits
-- Layer names designers can navigate (`Button · Speak to us`, `Image · hero-laptop`, `Section · pricing`), **clickable links** on text, text outlines, `line-clamp` / ellipsis truncation
+- Layer names designers can navigate (`Button · Speak to us`, `Image · hero-laptop`, `Section · pricing`), text outlines, `line-clamp` / ellipsis truncation
 - `clip-path` shapes (polygon, circle, ellipse, inset, path) and `mask-image` gradients as native **Figma masks**; conic and repeating gradients drawn by the browser itself
 - **Text styles** for typography that repeats, colour variables, an option to import onto a **new page**
 - Color variables created from the page palette and bound to fills
