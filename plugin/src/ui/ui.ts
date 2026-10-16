@@ -328,14 +328,18 @@ function howItWorks(link: boolean): string {
     return `<div class="sect">How it works</div><div class="way">
       <div class="flow">${node(ICON.link, 'Your link', 'Paste an address')}${arrow}${node(ICON.globe, 'Web2Fig', 'Opens &amp; converts')}${arrow}${node(ICON.layers, 'Figma', 'Editable layers')}</div>
       ${steps(['Type a website address above.', 'Pick Desktop, Tablet, Mobile or all three sizes.', 'Press <b>Fetch design</b>, check the preview, then <b>Import</b>.'])}
-      <p class="alt">Page behind a login, or a site that blocks servers? <button class="link" type="button" data-goto="paste">Use the Edge extension</button> instead.</p></div>`;
+      <p class="alt">Page behind a login, or a site that blocks servers? <a class="link" href="${CONTACT.edgeUrl}" target="_blank" rel="noopener noreferrer">Use the Edge extension</a> instead.</p>${coffeeLine()}</div>`;
   return `<div class="sect">How it works</div><div class="way">
       <div class="flow">${node(ICON.puzzle, 'Edge', 'Click Web2Fig')}${arrow}${node(ICON.copy, 'Clipboard', 'JSON copied')}${arrow}${node(ICON.layers, 'Figma', 'Paste here')}</div>
-      ${steps(['Install <b>Web2Fig</b> for Microsoft Edge (button below). It is free.', 'Open any page, even one behind a login, and click the extension. The capture is copied for you.', `Come back here and press <b>${MOD}+V</b>, or drop the <b>.json</b> file. Then <b>Import</b>.`])}</div>`;
+      ${steps(['Install <b>Web2Fig</b> for Microsoft Edge (button below). It is free.', 'Open any page, even one behind a login, and click the extension. The capture is copied for you.', `Come back here and press <b>${MOD}+V</b>, or drop the <b>.json</b> file. Then <b>Import</b>.`])}${coffeeLine()}</div>`;
 }
 
 function edgeCta(): string {
   return `<a class="cta" href="${CONTACT.edgeUrl}" target="_blank" rel="noopener noreferrer"><span class="tile">${ic(ICON.puzzle, '')}</span><span class="txt"><b>Get Web2Fig for Microsoft Edge</b><i>Free browser extension for the paste flow</i></span>${ic(ICON.external, '')}</a>`;
+}
+
+function coffeeLine(): string {
+  return `<a class="coffee-link in-card" href="${CONTACT.coffeeUrl}" target="_blank" rel="noopener noreferrer">${ic(ICON.coffee, '')}<span>Enjoying Web2Fig? <b>Buy me a coffee</b></span></a>`;
 }
 
 function coffeeCard(): string {

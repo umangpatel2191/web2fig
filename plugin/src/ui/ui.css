@@ -300,3 +300,4 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
 .coffee-link svg { width: 16px; height: 16px; flex: none; color: #c79a00; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .coffee-link b { color: var(--brand); font-weight: 700; }
 .coffee-link:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.coffee-link.in-card { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
