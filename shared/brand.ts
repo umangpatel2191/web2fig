@@ -42,5 +42,6 @@ export function logoSvg(size = 32): string {
 export const CONTACT = {
   email: 'umangp737@gmail.com',
   phone: '7600363306',
+  coffeeUrl: 'https://buymeacoffee.com/umangmadnaka',
   edgeUrl: 'https://microsoftedge.microsoft.com/addons/detail/web2fig-%E2%80%94-website-to-figm/ofomamonipegnofpcemkadghleapoccd',
 } as const;

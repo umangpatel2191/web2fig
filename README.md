@@ -16,6 +16,7 @@ Built for designers who generate websites with AI (or receive them from develope
 - **Microsoft Edge extension:** [Web2Fig — Website to Figma on Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/web2fig-%E2%80%94-website-to-figm/ofomamonipegnofpcemkadghleapoccd)
 - **Figma plugin:** search for **Web2Fig — Website to Figma** in Figma's Plugins (Community listing in review). Until then, build it from source below.
 - **Help:** umangp737@gmail.com
+- **Support:** Web2Fig is free. If it saves you time, you can [buy me a coffee](https://buymeacoffee.com/umangmadnaka) ☕
 
 Two parts, both free:
 

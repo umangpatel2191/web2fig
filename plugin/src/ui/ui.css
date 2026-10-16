@@ -282,3 +282,21 @@ svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
 .cp.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } .check svg, .badge-ok svg { stroke-dashoffset: 0 !important; } }
+
+/* ---------- Buy me a coffee ---------- */
+.top .pill.coffee-pill { background: #ffdd00; border: 0; color: #3b1a1d; font-weight: 700; text-decoration: none; padding: 5px 12px 5px 9px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); transition: transform 0.15s, filter 0.15s; }
+.top .pill.coffee-pill::before { content: none; }
+.top .pill.coffee-pill svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.top .pill.coffee-pill:hover { transform: translateY(-1px); filter: brightness(1.06); }
+.coffee { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 13px 14px; border-radius: 14px; text-decoration: none; color: var(--text); background: linear-gradient(135deg, #fff7d1, #ffeaa0); border: 1px solid #efd269; box-shadow: 0 6px 16px rgba(176, 128, 0, 0.14); transition: transform 0.15s, box-shadow 0.15s; }
+.coffee:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(176, 128, 0, 0.22); }
+.coffee .cup { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: #ffdd00; color: #3b1a1d; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08); }
+.coffee .cup svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.coffee .txt { flex: 1; min-width: 0; }
+.coffee b { display: block; font-size: 12.5px; font-weight: 700; }
+.coffee i { display: block; font-style: normal; color: #7a5b16; font-size: 11px; line-height: 1.35; margin-top: 1px; }
+.coffee .btn { flex: none; padding: 8px 12px; border-radius: 10px; background: #3b1a1d; color: #ffdd00; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.coffee-link { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 10px; font-size: 11.5px; color: var(--text-2); text-decoration: none; }
+.coffee-link svg { width: 16px; height: 16px; flex: none; color: #c79a00; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.coffee-link b { color: var(--brand); font-weight: 700; }
+.coffee-link:hover b { text-decoration: underline; text-underline-offset: 3px; }

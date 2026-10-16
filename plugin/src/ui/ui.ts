@@ -233,6 +233,7 @@ const ICON = {
   link: '<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1"/>',
   bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
   layers: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  coffee: '<path d="M5 9h11v5a5 5 0 01-5 5H10a5 5 0 01-5-5V9z"/><path d="M16 10.5h1.5a2.2 2.2 0 010 4.4H16"/><path d="M8 3.5v2M11 3.5v2M14 3.5v2"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
   phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/>',
   puzzle: '<path d="M10 4a2 2 0 114 0v1h3a1 1 0 011 1v3h1a2 2 0 110 4h-1v3a1 1 0 01-1 1h-3v-1a2 2 0 10-4 0v1H7a1 1 0 01-1-1v-3H5a2 2 0 110-4h1V6a1 1 0 011-1h3z"/>',
@@ -242,7 +243,7 @@ const ICON = {
 } as const;
 
 const header = () =>
-  `<header class="top"><span class="mark">${ic(ICON.code, '')}</span><div class="id"><b>${BRAND.name}</b><span class="t">${BRAND.tagline}</span></div><span class="pill">Plugin</span></header>`;
+  `<header class="top"><span class="mark">${ic(ICON.code, '')}</span><div class="id"><b>${BRAND.name}</b><span class="t">${BRAND.tagline}</span></div><a class="pill coffee-pill" href="${CONTACT.coffeeUrl}" target="_blank" rel="noopener noreferrer" title="Buy me a coffee">${ic(ICON.coffee, '')}<span>Support</span></a></header>`;
 
 /** A screen = header + scrollable body + (optional) pinned action bar. */
 const screen = (body: string, actions = '', bodyClass = ''): string =>
@@ -337,6 +338,10 @@ function edgeCta(): string {
   return `<a class="cta" href="${CONTACT.edgeUrl}" target="_blank" rel="noopener noreferrer"><span class="tile">${ic(ICON.puzzle, '')}</span><span class="txt"><b>Get Web2Fig for Microsoft Edge</b><i>Free browser extension for the paste flow</i></span>${ic(ICON.external, '')}</a>`;
 }
 
+function coffeeCard(): string {
+  return `<a class="coffee" href="${CONTACT.coffeeUrl}" target="_blank" rel="noopener noreferrer"><span class="cup">${ic(ICON.coffee, '')}</span><span class="txt"><b>Enjoying Web2Fig?</b><i>Free to use. A coffee keeps it going.</i></span><span class="btn">Buy me a coffee</span></a>`;
+}
+
 function helpCard(): string {
   const row = (icon: string, label: string, value: string, href: string) =>
     `<div class="hrow"><span class="tile">${ic(icon, '')}</span><span class="txt"><i>${label}</i><a href="${href}" target="_blank" rel="noopener noreferrer">${value}</a></span><button class="cp" type="button" data-copy="${value}" aria-label="Copy ${label}">${ic(ICON.copy, '')}</button></div>`;
@@ -360,6 +365,7 @@ function emptyScreen(): string {
     ${howItWorks(link)}
     ${link ? '' : edgeCta()}
     ${helpCard()}
+    ${coffeeCard()}
     <div class="feats">
       <div class="feat">${ic(ICON.bolt, '')}<b>Fast &amp; Accurate</b><span>Reliable results</span></div>
       <div class="feat">${ic(ICON.layers, '')}<b>Smart Layers</b><span>Clean &amp; organized</span></div>
@@ -447,6 +453,7 @@ function doneScreen(): string {
       <div class="stat"><b>${r.autoLayouts}</b><span>auto layouts</span></div>
       <div class="stat"><b>${r.variables}</b><span>variables</span></div>
     </div>
+    ${coffeeCard()}
     ${
       subs.length
         ? `<details class="notice warn" open><summary>${subs.length} font${subs.length > 1 ? 's' : ''} substituted</summary>
